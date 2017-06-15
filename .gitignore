@@ -28,3 +28,5 @@ visdial_*
 __pycache__/vgg.cpython-36.pyc
 
 .ipynb_checkpoints/vgg feature extraction example-checkpoint.ipynb
+
+val2014/*
