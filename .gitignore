@@ -30,3 +30,5 @@ __pycache__/vgg.cpython-36.pyc
 .ipynb_checkpoints/vgg feature extraction example-checkpoint.ipynb
 
 val2014/*
+
+__pycache__/VGG_Feature_Extract.cpython-36.pyc

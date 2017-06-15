@@ -8,23 +8,20 @@ from torch.autograd import Variable
 import torch.nn as nn
 import numpy
 
-from time import time
-
 class VGG_Feature_Extract():
 
     def __init__(self, image_paths):
 
-        s1 = time()
+        # compute the mean and std. of all pixels for image normalization
         mean, std = self.get_mean_std(image_paths)
-        print(mean)
-        print(std)
-        print(time()-s1)
 
+        # noraliztion pipeline: (img-mean) / std
         self.normalize = transforms.Normalize(
            mean=mean,
            std=std
         )
 
+        # preprocessing pipeline
         self.preprocess = transforms.Compose([
            transforms.Scale(224),
            transforms.CenterCrop(224),
@@ -49,6 +46,7 @@ class VGG_Feature_Extract():
         r_std, g_std, b_std = list(), list(), list()
         for img_p in image_paths:
             #channels = numpy.array(Image.open(img_p), dtype=numpy.float) / 255
+            # we use imageio as it turns out to be faster
             channels = imageio.imread(img_p) / 255
 
             # get mean channel value
@@ -64,12 +62,15 @@ class VGG_Feature_Extract():
                [numpy.mean(r_std), numpy.mean(g_std), numpy.mean(b_std)]
 
 
-    def get_features(self, x):
-        img_tensor = self.preprocess(x)
+    def get_features(self, img_p):
+        """ Given an image path, this function will return the VGG features """
+        img_tensor = self.preprocess(Image.open(img_p))
         img_tensor.unsqueeze_(0)
         img_variable = Variable(img_tensor)
         return self.model(img_variable)
 
+"""
+Example How To Extract Features
 image_paths = list()
 image_paths.append('val2014/COCO_val2014_000000000042.jpg')
 image_paths.append('val2014/COCO_val2014_000000000073.jpg')
@@ -77,10 +78,9 @@ image_paths.append('val2014/COCO_val2014_000000000074.jpg')
 image_paths.append('val2014/COCO_val2014_000000000133.jpg')
 image_paths.append('val2014/COCO_val2014_000000000136.jpg')
 
-s = time()
+
 fe = VGG_Feature_Extract(image_paths)
-s2 = time()
+
 for img_p in image_paths:
-    fe.get_features(Image.open(img_p))
-print(time()-s2)
-print(time()-s)
+    fe.get_features(img_p)
+"""
