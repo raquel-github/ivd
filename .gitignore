@@ -21,6 +21,6 @@ glove.6B.50d.txt
 
 # Preprocessing ignores
 *new.jsonl
-*.h5
+# *.h5
 *_params.json
 visdial_*

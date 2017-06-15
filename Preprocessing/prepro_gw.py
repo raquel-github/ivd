@@ -70,6 +70,7 @@ def tokenize_data(data):
         res[game['id']]['qa_ids'] = qa_ids
         res[game['id']]['objects'] = objects
         res[game['id']]['num_objects'] = len(game['objects'])
+        res[game['id']]['success'] = 1 if game['status'] == 'success' else 0
 
     # Return all gathered data
     return res, question_tokens, answer_tokens, word_counts, max_conv_length, max_objects
@@ -117,6 +118,7 @@ def encode_vocab(question_tokens, answer_tokens, word2ind):
 # Return    Data matrix containing all image indices (mapped from i => i)
 # Return    Data matrix containing info about all objects
 # Return    Data matrix containing info about object bounding boxes
+# Return    Data matrix containing wheter a game was succesful or not
 def create_data_matrices(data, question_indices, answer_indices, max_question_length, max_conv, max_objects):
 
     # Fetch the number of items (games)
@@ -128,6 +130,7 @@ def create_data_matrices(data, question_indices, answer_indices, max_question_le
     objects = np.zeros([num_items, max_objects])
     objects_bbox = np.zeros([num_items, max_objects, 4])
     image_index = np.zeros(num_items)
+    success = np.zeros(num_items)
     question_length = np.zeros([num_items, max_conv], dtype=np.int)
 
     # Loop over all games
@@ -136,6 +139,9 @@ def create_data_matrices(data, question_indices, answer_indices, max_question_le
         # Get the ID of the image (and the game) and save it
         img_id = data.keys()[i]
         image_index[i] = i 
+
+        # Save if the game was succesful or not
+        success = data[img_id]['success']
 
         # Loop over all Q/A pairs in this game
         for j in range(data[img_id]['length']):
@@ -158,7 +164,7 @@ def create_data_matrices(data, question_indices, answer_indices, max_question_le
             objects_bbox[i][j] = obj['bounding']
 
     # Return all data matrices
-    return questions, question_length, answers, image_index, objects, objects_bbox
+    return questions, question_length, answers, image_index, objects, objects_bbox, success
 
 
 
@@ -169,7 +175,7 @@ if __name__ == '__main__':
     print("Reading JSON data...")
 
     # Open the file 
-    with open('Data/guesswhat.small.test.jsonl') as f:
+    with open('Data/guesswhat.train.new.jsonl') as f:
         content = f.readlines()
 
     # Since the data is in JSONL format instead of JSON, the entire file is not 
@@ -210,7 +216,7 @@ if __name__ == '__main__':
     #                  Create data matrices
     # =======================================================
     print("Create data matrices")
-    questions_training, question_length_training, answers_training, image_index_training, objects_training, objects_bbox_training = create_data_matrices(data_training, question_training_indices, answer_training_indices, max_question_length, max_conv_training, max_objects_training)
+    questions_training, question_length_training, answers_training, image_index_training, objects_training, objects_bbox_training, success_training = create_data_matrices(data_training, question_training_indices, answer_training_indices, max_question_length, max_conv_training, max_objects_training)
 
     # =======================================================
     #                     Save data
@@ -224,6 +230,7 @@ if __name__ == '__main__':
     file.create_dataset('image_index_training', dtype='uint32', data=image_index_training)
     file.create_dataset('objects_training', dtype='uint32', data=objects_training)
     file.create_dataset('objects_bbox_training', dtype='uint32', data=objects_bbox_training)
+    file.create_dataset('success_training', dtype='uint32', data=success_training)
 
     file.close()
 
