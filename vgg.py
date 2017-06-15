@@ -35,6 +35,7 @@ class VGG(nn.Module):
             nn.Dropout(),
             nn.Linear(4096, num_classes),
         )
+        
         self._initialize_weights()
 
     def forward(self, x):
