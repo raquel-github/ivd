@@ -227,5 +227,13 @@ if __name__ == '__main__':
 
     file.close()
 
+    # Export word2ind and ind2word to JSON format
+    print("Save JSON file")
+    
+    out = {}
+    out['ind2word'] = ind2word
+    out['word2ind'] = word2ind
+    json.dump(out, open('Data/indices.json', 'w'))
+
     # We're done.
     print("Done.")
