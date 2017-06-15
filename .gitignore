@@ -18,3 +18,9 @@ glove.6B.50d.txt
 .ipynb_checkpoints/QuestionGenerator-checkpoint.ipynb
 
 .ipynb_checkpoints/Guesser-checkpoint.ipynb
+
+# Preprocessing ignores
+*new.jsonl
+*.h5
+*_params.json
+visdial_*
