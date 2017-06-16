@@ -36,3 +36,9 @@ __pycache__/VGG_Feature_Extract.cpython-36.pyc
 indices_new.json
 
 preprocessed_new.h5
+
+train/*
+
+train2014/*
+
+*.pyc

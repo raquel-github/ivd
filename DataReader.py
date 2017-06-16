@@ -41,7 +41,7 @@ class DataReader():
         return game_ids
 
 
-    def get_image_filename(self, game_id):
+    def get_image_path(self, game_id):
         """ given an game id, returns the image filename """
         data_id = self.game_index_training[game_id]
         img_filename = self.img_metadata[str(data_id)]['filename']
@@ -53,7 +53,7 @@ class DataReader():
     def get_image_id(self, game_id):
         """ given a game id, returns the image id of the image in the game """
         return self.image_index_training[game_id]
-        
+
 
     def get_image_url(self, game_id):
         """ given an game id, returns the image url """
