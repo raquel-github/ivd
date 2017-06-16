@@ -24,7 +24,7 @@ class VGG_Feature_Extract():
            std=std
         )
 
-        print("Mean: %f, Std %f" %(mean, std))
+        print("Mean: ", mean,  "Std: ", std)
 
         # preprocessing pipeline
         self.preprocess = transforms.Compose([
