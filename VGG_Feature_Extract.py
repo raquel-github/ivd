@@ -3,11 +3,14 @@ import io
 import requests
 from PIL import Image
 import imageio
+import torch
 from torchvision import models, transforms
 from torch.autograd import Variable
 import torch.nn as nn
 import numpy
 import os
+
+use_cuda = torch.cuda.is_available()
 
 class VGG_Feature_Extract():
 
@@ -16,7 +19,7 @@ class VGG_Feature_Extract():
         self.images_path = images_path
 
         # compute the mean and std. of all pixels for image normalization
-        mean, std = self.get_mean_std(self.images_path)
+        mean, std = self.get_mean_std()
 
         # noraliztion pipeline: (img-mean) / std
         self.normalize = transforms.Normalize(
@@ -37,6 +40,7 @@ class VGG_Feature_Extract():
         # load preptrained model
         self.model = vgg.vgg16_bn(pretrained=True)
 
+
         # replace fullyconnceted layer to get onyl features (and not classification)
         self.model.classifier = nn.Sequential(
             nn.Linear(512 * 7 * 7, 4096),
@@ -45,12 +49,15 @@ class VGG_Feature_Extract():
             nn.Linear(4096, 4096)
         )
 
-    def get_mean_std(self, images_path):
+        if use_cuda:
+            self.model.cuda();
+
+    def get_mean_std(self):
         # get the mean channel value and std of all images
         r_mean, g_mean, b_mean = list(), list(), list()
         r_std, g_std, b_std = list(), list(), list()
 
-        for f in os.listdir(images_path+"/"):
+        for f in os.listdir(self.images_path+"/"):
             if f.endswith(".jpg"):
                 img_p = self.images_path + "/" + f
                 #channels = numpy.array(Image.open(img_p), dtype=numpy.float) / 255
@@ -83,21 +90,21 @@ class VGG_Feature_Extract():
         """ Given an image path, this function will return the VGG features """
         img_tensor = self.preprocess(Image.open(img_p))
         img_tensor.unsqueeze_(0)
-        img_variable = Variable(img_tensor)
+        if use_cuda:
+            img_variable = Variable(img_tensor).cuda()
+        else:
+            img_variable = Variable(img_tensor)
         return self.model(img_variable)
 
-"""
+
 # Example How To Extract Features
-images_path = list()
-images_path.append('train2014/COCO_val2014_000000000042.jpg')
-images_path.append('train2014/COCO_val2014_000000000073.jpg')
-images_path.append('train2014/COCO_val2014_000000000074.jpg')
-images_path.append('train2014/COCO_val2014_000000000133.jpg')
-images_path.append('train2014/COCO_val2014_000000000136.jpg')
+# images_path = str('../data/Sample/MS_COCO')
 
 
-fe = VGG_Feature_Extract(images_path)
+# fe = VGG_Feature_Extract(images_path)
 
-for img_p in images_path:
-    print(fe.get_features(img_p))
-"""
+# for f in os.listdir(images_path+"/"):
+#             if f.endswith(".jpg"):
+#                 img_p = images_path + "/" + f
+#                 print(fe.get_features(img_p))
+
