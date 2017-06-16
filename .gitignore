@@ -32,3 +32,7 @@ __pycache__/vgg.cpython-36.pyc
 val2014/*
 
 __pycache__/VGG_Feature_Extract.cpython-36.pyc
+
+indices_new.json
+
+preprocessed_new.h5
