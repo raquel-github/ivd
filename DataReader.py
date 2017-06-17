@@ -31,6 +31,13 @@ class DataReader():
 
 
 
+    def get_word2ind(self):
+        """  """
+        return self.word2ind
+
+    def get_ind2word(self):
+        return self.ind2word
+
 
     def get_game_ids(self):
         """ returns all game ids """
@@ -126,7 +133,8 @@ class DataReader():
         return self.success_training[game_id]
 
 
-#### dr = DataReader(data_path='preprocessed_new.h5', indicies_path='indices_new.json', images_path='val2014')
+
+# dr = DataReader(data_path='preprocessed_new.h5', indicies_path='indices_new.json', images_path='val2014')
 
 """ Example of how to use this class
 #game_ids = dr.get_game_ids()
