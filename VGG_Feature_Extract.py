@@ -19,7 +19,11 @@ class VGG_Feature_Extract():
         self.images_path = images_path
 
         # compute the mean and std. of all pixels for image normalization
-        mean, std = self.get_mean_std()
+        # mean, std = self.get_mean_std()
+
+        # Using the calculated mean and std
+        mean =  [0.46850368193465208, 0.44082507580237773, 0.40006772405310387]
+        std  =  [0.24781090438656844, 0.24233634909779816, 0.24476862030284652] 
 
         # noraliztion pipeline: (img-mean) / std
         self.normalize = transforms.Normalize(
@@ -88,12 +92,20 @@ class VGG_Feature_Extract():
 
     def get_features(self, img_p):
         """ Given an image path, this function will return the VGG features """
-        img_tensor = self.preprocess(Image.open(img_p))
+        img = Image.open(img_p)
+        if len(numpy.array(img).shape) == 2:
+            rgb = Image.new('RGB',img.size)
+            rgb.paste(img)
+            img = rgb
+            print(img_p)
+            print(numpy.array(img).shape)
+        img_tensor = self.preprocess(img)
         img_tensor.unsqueeze_(0)
         if use_cuda:
             img_variable = Variable(img_tensor).cuda()
         else:
             img_variable = Variable(img_tensor)
+        # print(img_p)
         return self.model(img_variable)
 
 

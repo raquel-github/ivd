@@ -126,7 +126,7 @@ class DataReader():
         return self.success_training[game_id]
 
 
-dr = DataReader(data_path='preprocessed_new.h5', indicies_path='indices_new.json', images_path='val2014')
+#### dr = DataReader(data_path='preprocessed_new.h5', indicies_path='indices_new.json', images_path='val2014')
 
 """ Example of how to use this class
 #game_ids = dr.get_game_ids()
