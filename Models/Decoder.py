@@ -3,9 +3,11 @@ import torch.autograd as autograd
 import torch.nn as nn
 import torch.nn.functional as F
 
+use_cuda = torch.cuda.is_available()
+
 class Decoder(nn.Module):
 
-    def __init__(self, hidden_encoder_dim, hidden_decoder_dim):
+    def __init__(self, hidden_encoder_dim, hidden_decoder_dim, vocab_size):
         """
         Parameters
         hidden_encoder_dim      Dimensionaly of the hidden state of the encoder
@@ -13,12 +15,13 @@ class Decoder(nn.Module):
 
         super(Decoder, self).__init__()
 
-        self.hidden_encoder_dim = encoder_dim
-        self.hidden_decoder_dim = decoder_dim
+        self.hidden_encoder_dim = hidden_encoder_dim
+        self.hidden_decoder_dim = hidden_decoder_dim
+        self.vocab_size = vocab_size
 
         self.decoder_lstm = nn.LSTM(hidden_encoder_dim, hidden_decoder_dim)
 
-        self.hidden_decoder = init_hidden()
+        self.hidden_decoder = self.init_hidden()
 
         self.hidden2word = nn.Linear(hidden_decoder_dim, vocab_size)
 
@@ -37,10 +40,9 @@ class Decoder(nn.Module):
         lstm_out, self.hidden_decoder = self.decoder_lstm(hidden_encoder, self.hidden_decoder)
 
         # mapping hidden state to word output
-        word_space = self.hidden2word(lstm_out.view(len(sentence.split()), -1))
+        word_space = self.hidden2word(lstm_out.view(1,-1))
 
         # p(w)
         word_scores = F.log_softmax(word_space)
-
 
         return word_scores

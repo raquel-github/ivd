@@ -44,3 +44,9 @@ train2014/*
 *.pyc
 
 image_features.h5
+
+Preprocessing/Data/indices.json
+
+Preprocessing/Data/preprocessed.h5
+
+Preprocessing/Data/preprocessed.h5

@@ -1,7 +1,7 @@
 import torch
 import torch.autograd as autograd
 import torch.nn as nn
-import torch.autorgrad.Variable as Variable
+from torch.autograd import Variable
 import torch.nn.functional as F
 
 class Guesser(nn.Module):

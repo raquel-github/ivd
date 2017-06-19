@@ -10,10 +10,10 @@ class DataReader():
 
         # read indicies json file with indicies
         self.indicies = json.load(open(indicies_path))
-        self.ind2word       = self.indicies['ind2word']
-        self.word2ind       = self.indicies['word2ind']
-        self.img_metadata   = self.indicies['img_metadata']
-        self.categories     = self.indicies['categories']
+        self.ind2word               = self.indicies['ind2word']
+        self.word2ind               = self.indicies['word2ind']
+        self.img_metadata           = self.indicies['img_metadata_training']
+        self.categories             = self.indicies['categories_training']
 
         # read data file
         self.data = h5py.File(data_path, 'r')
@@ -34,10 +34,6 @@ class DataReader():
         self.all_img_ids        = self.image_features_data['all_img_ids']
         self.all_img_features   = self.image_features_data['all_img_features']
 
-
-        # close files
-        self.data.close()
-        self.image_features_data.close()
 
 
     def get_word2ind(self):
@@ -96,7 +92,7 @@ class DataReader():
     def get_image_features(self, game_id):
         """ given a game id, return the features of the image for that game """
         image_id = self.get_image_id(game_id)
-        feature_id = self.all_img_ids.index(image_id)
+        feature_id = list(self.all_img_ids).index(image_id)
         return self.all_img_features[feature_id]
 
 

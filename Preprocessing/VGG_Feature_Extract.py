@@ -22,10 +22,11 @@ class VGG_Feature_Extract():
         # mean, std = self.get_mean_std()
 
         # Using the calculated mean and std
+        # TODO get these from image net
         mean =  [0.46850368193465208, 0.44082507580237773, 0.40006772405310387]
-        std  =  [0.24781090438656844, 0.24233634909779816, 0.24476862030284652] 
+        std  =  [0.24781090438656844, 0.24233634909779816, 0.24476862030284652]
 
-        # noraliztion pipeline: (img-mean) / std
+        # normaliztion pipeline: (img-mean) / std
         self.normalize = transforms.Normalize(
            mean=mean,
            std=std
@@ -119,4 +120,3 @@ class VGG_Feature_Extract():
 #             if f.endswith(".jpg"):
 #                 img_p = images_path + "/" + f
 #                 print(fe.get_features(img_p))
-

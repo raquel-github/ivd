@@ -1,7 +1,10 @@
 import torch
 import torch.autograd as autograd
 import torch.nn as nn
-import torch.autorgrad.Variable as Variable
+from torch.autograd import Variable
+
+
+use_cuda = torch.cuda.is_available()
 
 class Encoder(nn.Module):
 
@@ -21,23 +24,18 @@ class Encoder(nn.Module):
         self.vocab_size = vocab_size
         self.word_embedding_dim = word_embedding_dim
         self.hidden_word_embed_layer = int(vocab_size / 2)
-        self.hidden_encoder = hidden_encoder
         self.visual_features_dim = visual_features_dim
         self.word2index = word2index
+        self.hidden_encoder_dim = hidden_encoder_dim
 
         # Word embedding Training Model
-        self.word_embed_model = nn.Sequential(
-            nn.Linear(vocab_size, hidden_word_embed_layer),
-            nn.ReLU(),
-            nn.Linear(hidden_word_embed_layer, word_embedding_dim),
-            nn.Tanh()
-        )
+        self.word_embeddings = nn.Embedding(vocab_size, word_embedding_dim)
 
         # Encoder Model
         self.encoder_lstm = nn.LSTM(word_embedding_dim+visual_features_dim, hidden_encoder_dim)
 
         # Initiliaze the hidden state of the LSTM
-        self.hidden_encoder = init_hidden()
+        self.hidden_encoder = self.init_hidden()
 
     def init_hidden(self):
         if use_cuda:
@@ -47,26 +45,22 @@ class Encoder(nn.Module):
             return (autograd.Variable(torch.zeros(1, 1, self.hidden_encoder_dim)),
                     autograd.Variable(torch.zeros(1, 1, self.hidden_encoder_dim)))
 
-    def word2onehot(self, w):
-        onehot = torch.zeros(self.vocab_size)
-        onehot[self.word2index[w]] = 1
-        return onehot
+    def word2embedd(self, w):
+        return self.word_embeddings(Variable(torch.LongTensor([self.word2index[w]])))
 
     def forward(self, sentence, visual_features):
 
         # compute the one hot representation of the sentence
-        sent_onehot = Variable(torch.zeros(len(sentence.split()), self.vocab_size))
-        for i, w in enumerate(sentence.split()):
-            sent_onehot[i] = word2index(w)
+        sentence_embedding = Variable(torch.zeros(len(sentence.split()), self.word_embedding_dim))
 
-        # get word embedding
-        word_embed = self.word_embed_model(sent_onehot)
+        for i, w in enumerate(sentence.split()):
+            sentence_embedding[i] = self.word2embedd(w)
 
         # prepare visual features for concatenation
-        visual_features_stack = torch.cat([visual_features.view(1, -1)] * len(sentence.split()))
+        visual_features_stack = torch.cat([Variable(torch.FloatTensor(visual_features).view(1,-1))] * len(sentence.split()))
 
         # get the input to the LSTM encoder by concatenating word embeddings and visual features
-        encoder_in = torch.cat([word_embed, visual_features])
+        encoder_in = torch.cat([sentence_embedding, visual_features_stack], dim=1).view(len(sentence.split()),1,-1)
 
         # pass word embeddings through encoder LSTM and get output and hidden state
         encoder_out, self.hidden_encoder = self.encoder_lstm(encoder_in, self.hidden_encoder)
