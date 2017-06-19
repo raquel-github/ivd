@@ -14,6 +14,7 @@ word2ind - mapping of words in the vocabulary to the index used by the questions
 ind2word - reverse mapping of word2ind
 categories - mapping of category IDs to 
 img_metadata - mapping of *actual* image ID to coco_url and filename
+game_id_to_img - mapping of game ID to image ID
 
 
 Variables in the image_features.h5 HDF5 file:
