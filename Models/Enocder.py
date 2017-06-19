@@ -14,6 +14,9 @@ class Encoder(nn.Module):
         visual_features_dim     Dimensionaly of the visual features
 
         """
+
+        super(Encoder, self).__init__()
+
         self.vocab_size = vocab_size
         self.word_embedding_dim = word_embedding_dim
         self.hidden_word_embed_layer = int(vocab_size / 2)
@@ -63,8 +66,8 @@ class Encoder(nn.Module):
         # get the input to the LSTM encoder by concatenating word embeddings and visual features
         encoder_in = torch.cat([word_embed, visual_features])
 
-
         # pass word embeddings through encoder LSTM and get output and hidden state
-        encoder_out, self.hidden_encoder = self.encoder_lstm(encoder_in)
+        encoder_out, self.hidden_encoder = self.encoder_lstm(encoder_in, self.hidden_encoder)
+
 
         return encoder_out, self.hidden_encoder

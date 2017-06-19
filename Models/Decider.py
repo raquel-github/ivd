@@ -10,6 +10,8 @@ class Decider(nn.Module):
         hidden_encoder_dim      Dimensionaly of the hidden state of the encoder
         """
 
+        super(Decider, self).__init__()
+
         self.decider_model = nn.Sequential(
             nn.Linear(hidden_encoder_dim, 64),
             nn.ReLU(),
