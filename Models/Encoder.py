@@ -1,6 +1,7 @@
 import torch
 import torch.autograd as autograd
 import torch.nn as nn
+import torch.autorgrad.Variable as Variable
 
 class Encoder(nn.Module):
 
@@ -22,6 +23,7 @@ class Encoder(nn.Module):
         self.hidden_word_embed_layer = int(vocab_size / 2)
         self.hidden_encoder = hidden_encoder
         self.visual_features_dim = visual_features_dim
+        self.word2index = word2index
 
         # Word embedding Training Model
         self.word_embed_model = nn.Sequential(
@@ -47,13 +49,13 @@ class Encoder(nn.Module):
 
     def word2onehot(self, w):
         onehot = torch.zeros(self.vocab_size)
-        onehot[word2index[w]] = 1
+        onehot[self.word2index[w]] = 1
         return onehot
 
     def forward(self, sentence, visual_features):
 
         # compute the one hot representation of the sentence
-        sent_onehot = torch.zeros(len(sentence.split()), self.vocab_size)
+        sent_onehot = Variable(torch.zeros(len(sentence.split()), self.vocab_size))
         for i, w in enumerate(sentence.split()):
             sent_onehot[i] = word2index(w)
 

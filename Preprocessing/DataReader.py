@@ -27,6 +27,7 @@ class DataReader():
         self.question_length_training   = self.data['question_length_training']
         self.questions_training         = self.data['questions_training']
         self.success_training           = self.data['success_training']
+        self.correct_object_training    = self.data['correct_object_training']
 
         # read images_features file
         self.image_features_data = h5py.File(images_features_path, 'r')
@@ -34,7 +35,9 @@ class DataReader():
         self.all_img_features   = self.image_features_data['all_img_features']
 
 
-
+        # close files
+        self.data.close()
+        self.image_features_data.close()
 
 
     def get_word2ind(self):
@@ -44,6 +47,14 @@ class DataReader():
     def get_ind2word(self):
         return self.ind2word
 
+    def get_categories_length(self):
+        return len(self.categories)
+
+    def get_cat2id(self):
+        return self.categories
+
+    def get_target_object(self, game_id):
+        return self.correct_object_training[game_id]
 
     def get_game_ids(self):
         """ returns all game ids """
@@ -133,6 +144,12 @@ class DataReader():
 
         return bbox
 
+    def get_image_meta(self, game_id):
+        """ returns the required metadata for an image, which is the bbox, width and height """
+        bbox = get_object_bbox(game_id)
+        width, height = get_image_width_height(game_id)
+        return [bbox, width, height]
+
     def get_category_id(self, game_id):
         """ given a game id, returns the categories of the objects in the image """
         categories = self.objects_training[game_id]
@@ -144,7 +161,6 @@ class DataReader():
     def get_success(self, game_id):
         """ given a game id, returns whether the guesses has been successful or not """
         return self.success_training[game_id]
-
 
 
 # dr = DataReader(data_path='preprocessed_new.h5', indicies_path='indices_new.json', images_path='val2014')
