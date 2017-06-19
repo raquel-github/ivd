@@ -1,5 +1,4 @@
-The following contains the log generated during extraction of VGG features. The mean and std deviation are computed over training images in Guesswhat dataset(46,794 images).
-And subsequent log statements are filename of the grayscale image and the next line contains the shape of the converted image to three channels for giving it as input to the VGG.
+The following contains the log generated during extraction of VGG features. And subsequent log statements are filename of the grayscale image and the next line contains the shape of the converted image to three channels for giving it as input to the VGG.
 This is done using the following code using PIL library:
 
 img = Image.open(img_p)
