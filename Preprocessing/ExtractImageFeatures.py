@@ -12,11 +12,11 @@ start = time()
 
 use_cuda = torch.cuda.is_available()
 
-data_path = '../data/hdf5/preprocessed_new.h5'
-indicies_path = '../data/hdf5/indices_new.json'
-images_path = '../data/GuessWhat/Train'
+data_path = '../../data/hdf5/preprocessed.h5'
+indicies_path = '../../data/hdf5/indices.json'
+images_path = '../../data/GuessWhat/Train'
 
-dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_path=images_path)
+dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_path=images_path, images_features_path= '')
 vgg_ext = VGG_Feature_Extract(images_path=images_path)
 
 game_ids = dr.get_game_ids()
