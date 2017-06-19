@@ -27,7 +27,6 @@ def tokenize_data(data, word_count = False):
     question_tokens, answer_tokens = [], []
     max_conv_length = 0
     max_objects = 0
-    print ("Tokenizing questions and answers")
 
     # Loop over all games
     for game in data:
@@ -93,6 +92,9 @@ def tokenize_data(data, word_count = False):
         res[game['id']]['image']['height'] = game['image']['height']
         res[game['id']]['image']['id'] = game['image']['id']
 
+        # Save the correct object IDs
+        res[game['id']]['object_id'] = game['object_id']
+
     # Return all gathered data
     return res, question_tokens, answer_tokens, categories, word_counts, max_conv_length, max_objects
 
@@ -142,6 +144,7 @@ def encode_vocab(question_tokens, answer_tokens, word2ind):
 # Return    Data matrix mapping object X in a game to the actual object ID
 # Return    Data matrix mapping number of game to game ID
 # Return    Data matrix mapping game ID to image ID
+# Return    Data matrix mapping game index to correct object ID
 # Return    Data matrix containing width and height of images
 # Return    Data matrix containing filename and coco_url of images
 # Return    Data matrix containing wheter a game was succesful or not
@@ -160,6 +163,7 @@ def create_data_matrices(data, question_indices, answer_indices, max_question_le
     success = np.zeros(num_items)
     game_index = np.zeros(num_items)
     game_id_to_img = {}
+    correct_object = np.zeros(num_items)
     question_length = np.zeros([num_items, max_conv], dtype=np.int)
     image_wh = np.zeros([num_items, 2])
     image_meta = {}
@@ -176,6 +180,9 @@ def create_data_matrices(data, question_indices, answer_indices, max_question_le
 
         # Store the game/image ID
         game_index[i] = img_id
+
+        # Store correct object ID
+        correct_object[i] = data[img_id]['object_id']
 
         # Store image width en height
         image_wh[i][0] = data[img_id]['image']['width']
@@ -210,11 +217,8 @@ def create_data_matrices(data, question_indices, answer_indices, max_question_le
             objects_bbox[i][j] = obj['bounding']
             object_index[i][j] = obj['id']
 
-
-    print(game_id_to_img)
-
     # Return all data matrices
-    return questions, question_length, answers, image_index, game_index, objects, objects_bbox, object_index, game_id_to_img, image_wh, image_meta, success
+    return questions, question_length, answers, image_index, game_index, objects, objects_bbox, object_index, correct_object, game_id_to_img, image_wh, image_meta, success
 
 
 
@@ -224,17 +228,23 @@ if __name__ == '__main__':
     # =======================================================
     print("Reading JSON data...")
 
-    # Open the file 
+    # Open the files
     with open('Data/guesswhat.train.new.jsonl') as f:
-        content = f.readlines()
+        content_training = f.readlines()
+
+    with open('Data/guesswhat.valid.new.jsonl') as f:
+        content_valid = f.readlines()
 
     # Since the data is in JSONL format instead of JSON, the entire file is not 
     # a valid JSON file. However, each line is valid JSON, so we have to parse
     # every line as a separate JSON entry.
-    data_training = [json.loads(x.strip()) for x in content]
+    data_training = [json.loads(x.strip()) for x in content_training]
+    data_valid = [json.loads(x.strip()) for x in content_valid]
     
     # Tokenize the data
-    data_training, question_training_tokens, answer_training_tokens, categories_training, word_counts_training, max_conv_training, max_objects_training = tokenize_data(data_training)
+    print ("Tokenizing questions and answers")
+    data_training, question_training_tokens, answer_training_tokens, categories_training, word_counts_training, max_conv_training, max_objects_training = tokenize_data(data_training, True)
+    data_valid, question_valid_tokens, answer_valid_tokens, categories_valid, _, max_conv_valid, max_objects_valid = tokenize_data(data_valid)
 
     # =======================================================
     #                 Building the vocabulary
@@ -260,13 +270,15 @@ if __name__ == '__main__':
     #                Encode based on vocab
     # =======================================================
     print("Encode based on vocabulary")
-    question_training_indices, answer_training_indices, max_question_length = encode_vocab(question_training_tokens, answer_training_tokens, word2ind)
+    question_training_indices, answer_training_indices, max_question_length_training = encode_vocab(question_training_tokens, answer_training_tokens, word2ind)
+    question_valid_indices, answer_valid_indices, max_question_length_valid = encode_vocab(question_valid_tokens, answer_valid_tokens, word2ind)
 
     # =======================================================
     #                  Create data matrices
     # =======================================================
     print("Create data matrices")
-    questions_training, question_length_training, answers_training, image_index_training, game_index_training, objects_training, objects_bbox_training, object_index_training, game_id_to_img_training, image_wh_training, image_meta_training, success_training = create_data_matrices(data_training, question_training_indices, answer_training_indices, max_question_length, max_conv_training, max_objects_training)
+    questions_training, question_length_training, answers_training, image_index_training, game_index_training, objects_training, objects_bbox_training, object_index_training, correct_object_training, game_id_to_img_training, image_wh_training, image_meta_training, success_training = create_data_matrices(data_training, question_training_indices, answer_training_indices, max_question_length_training, max_conv_training, max_objects_training)
+    questions_valid, question_length_valid, answers_valid, image_index_valid, game_index_valid, objects_valid, objects_bbox_valid, object_index_valid, correct_object_valid, game_id_to_img_valid, image_wh_valid, image_meta_valid, success_valid = create_data_matrices(data_valid, question_valid_indices, answer_valid_indices, max_question_length_valid, max_conv_valid, max_objects_valid)
 
     # =======================================================
     #                     Save data
@@ -283,7 +295,20 @@ if __name__ == '__main__':
     file.create_dataset('objects_bbox_training', dtype='float32', data=objects_bbox_training)
     file.create_dataset('success_training', dtype='uint32', data=success_training)
     file.create_dataset('object_index_training', dtype='uint32', data=object_index_training)
+    file.create_dataset('correct_object_training', dtype='uint32', data=correct_object_training)
     file.create_dataset('image_wh_training', dtype='uint32', data=image_wh_training)
+
+    file.create_dataset('questions_valid', dtype='uint32', data=questions_valid)
+    file.create_dataset('question_length_valid', dtype='uint32', data=question_length_valid)
+    file.create_dataset('answers_valid', dtype='uint32', data=answers_valid)
+    file.create_dataset('image_index_valid', dtype='uint32', data=image_index_valid)
+    file.create_dataset('game_index_valid', dtype='uint32', data=game_index_valid)
+    file.create_dataset('objects_valid', dtype='uint32', data=objects_valid)
+    file.create_dataset('objects_bbox_valid', dtype='float32', data=objects_bbox_valid)
+    file.create_dataset('success_valid', dtype='uint32', data=success_valid)
+    file.create_dataset('object_index_valid', dtype='uint32', data=object_index_valid)
+    file.create_dataset('correct_object_valid', dtype='uint32', data=correct_object_valid)
+    file.create_dataset('image_wh_valid', dtype='uint32', data=image_wh_valid)
 
     file.close()
 
@@ -293,9 +318,12 @@ if __name__ == '__main__':
     out = {}
     out['ind2word'] = ind2word
     out['word2ind'] = word2ind
-    out['categories'] = categories_training
-    out['img_metadata'] = image_meta_training
-    out['game_id_to_img'] = game_id_to_img_training
+    out['categories_training'] = categories_training
+    out['img_metadata_training'] = image_meta_training
+    out['game_id_to_img_training'] = game_id_to_img_training
+    out['categories_valid'] = categories_valid
+    out['img_metadata_valid'] = image_meta_valid
+    out['game_id_to_img_valid'] = game_id_to_img_valid
     json.dump(out, open('Data/indices.json', 'w'))
 
     # We're done.
