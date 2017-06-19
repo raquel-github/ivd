@@ -3,7 +3,7 @@ import h5py
 
 class DataReader():
 
-    def __init__(self, data_path, indicies_path, images_path):
+    def __init__(self, data_path, indicies_path, images_path, images_features_path):
 
         # save image path in DataReader Object
         self.images_path = images_path
@@ -27,6 +27,12 @@ class DataReader():
         self.question_length_training   = self.data['question_length_training']
         self.questions_training         = self.data['questions_training']
         self.success_training           = self.data['success_training']
+
+        # read images_features file
+        self.image_features_data = h5py.File(images_features_path, 'r')
+        self.all_img_ids        = self.image_features_data['all_img_ids']
+        self.all_img_features   = self.image_features_data['all_img_features']
+
 
 
 
@@ -74,6 +80,13 @@ class DataReader():
         """ given a game id, returns the width and height of the image """
         width, height = self.image_wh_training[game_id]
         return width, height
+
+
+    def get_image_features(self, game_id):
+        """ given a game id, return the features of the image for that game """
+        image_id = self.get_image_id(game_id)
+        feature_id = self.all_img_ids.index(image_id)
+        return self.all_img_features[feature_id]
 
 
     def get_questions(self, game_id):
