@@ -34,8 +34,8 @@ index2word              = dr.get_ind2word()
 
 # Training
 iterations              = 10
-encoder_lr              = 0.001
-decoder_lr              = 0.001
+encoder_lr              = 0.1
+decoder_lr              = 0.1
 
 
 
@@ -47,23 +47,26 @@ decoder_loss_function = nn.NLLLoss()
 encoder_optimizer = optim.Adam(encoder_model.parameters(), encoder_lr)
 decoder_optimizer = optim.Adam(decoder_model.parameters(), decoder_lr)
 
-decoder_epoch_loss = list()
+decoder_epoch_loss = torch.Tensor()
+
+game_ids = dr.get_game_ids()
+game_ids = game_ids[2:5]
 
 for epoch in range(iterations):
 
-
-
-    for gid in dr.get_game_ids():
+    for gid in game_ids:
 
         # check for successful training instance, else skip
-        if dr.get_success(gid) != 0:
+        if dr.get_success(gid) == 0:
             continue
+
+        print("Processing game", gid)
 
         decoder_loss = 0
 
         # Initiliaze encoder/decoder hidden state with 0
         encoder_model.hidden_encoder = encoder_model.init_hidden()
-        decoder_model.hidden_encoder = decoder_model.init_hidden()
+        decoder_model.hidden_decoder = decoder_model.init_hidden()
 
         encoder_model.zero_grad()
         decoder_model.zero_grad()
@@ -71,47 +74,56 @@ for epoch in range(iterations):
         questions = dr.get_questions(gid)
         visual_features = dr.get_image_features(gid)
 
-        print("Qlen", len(questions))
 
         for qid, q in enumerate(questions):
 
-            print("Current", q)
-            print("Next Q ", questions[qid+1])
+            prod_q = str()
 
-            if qid != len(questions)-2:
+            if qid <= len(questions)-2:
                 # more questions to come
 
                 # encode question
                 encoder_out, encoder_hidden_state = encoder_model(q, visual_features)
 
-                print(qid)
-                print(len(q))
-                print(q)
 
                 # get decoder target
-                decoder_targets = Variable(torch.LongTensor(len(questions[qid+1].split()))) # TODO add -1 when -EOS- is avail.
+                next_question_length = len(questions[qid+1].split())
 
-
-                print(decoder_targets.size())
+                decoder_targets = Variable(torch.LongTensor(next_question_length)) # TODO add -1 when -EOS- is avail.
                 for qwi, qw in enumerate(questions[qid+1].split()): # TODO add [1:] slice when -SOS- is avail.
                     decoder_targets[qwi] = word2index[qw]
 
+                # get produced question by decoder
+                for next_qwid in range(next_question_length-1):
+                    # go as long as target or until ?/-EOS- token
 
-
-                for next_qwid in range(len(questions[qid+1].split())-1):
-
+                    # pass through decoder
                     pw = decoder_model(encoder_hidden_state[0])
+
+                    # get argmax()
                     _, w_id = pw.data.topk(1)
+                    w_id = str(w_id[0][0])
+
+                    # save produced word
+                    prod_q += index2word[w_id] + ' '
 
                     decoder_loss += decoder_loss_function(pw, decoder_targets[next_qwid])
+
+                    if w_id == word2index['?']: # TODO change to -EOS- once avail.
+                        break
+
+
+                print(prod_q)
+
+
+            decoder_epoch_loss = torch.cat([decoder_epoch_loss, decoder_loss.data])
 
         decoder_loss.backward()
 
         encoder_optimizer.step()
         decoder_optimizer.step()
 
-        decoder_epoch_loss.append(decoder_loss)
 
-    print("Epoch %i, Loss %f" %(epoch, np.mean(decoder_epoch_loss)))
+    print("Epoch %i, Loss %f" %(epoch, torch.mean(decoder_epoch_loss)))
 
 print("Training completed.")
