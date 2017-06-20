@@ -35,9 +35,16 @@ class Decoder(nn.Module):
                     autograd.Variable(torch.zeros(1, 1, self.hidden_decoder_dim)))
 
 
-    def forward(self, hidden_encoder):
+    def forward(self, hidden_encoder=None, decoder_input=None):
 
-        lstm_out, self.hidden_decoder = self.decoder_lstm(hidden_encoder, self.hidden_decoder)
+        if hidden_encoder:
+            self.hidden_decoder = hidden_encoder
+
+        if decoder_input:
+            self.lstm_out, self.hidden_decoder = self.decoder_lstm(decoder_input, self.hidden_decoder)
+
+        else:
+            self.lstm_out, self.hidden_decoder = self.decoder_lstm(self.lstm_out, self.hidden_decoder)
 
         # mapping hidden state to word output
         word_space = self.hidden2word(lstm_out.view(1,-1))

@@ -52,6 +52,8 @@ decoder_epoch_loss = torch.Tensor()
 game_ids = dr.get_game_ids()
 game_ids = game_ids[2:5]
 
+sos = Variable(torch.randn(100,1)).view(1,1,-1)
+
 for epoch in range(iterations):
 
     for gid in game_ids:
@@ -98,7 +100,10 @@ for epoch in range(iterations):
                     # go as long as target or until ?/-EOS- token
 
                     # pass through decoder
-                    pw = decoder_model(encoder_hidden_state[0])
+                    if next_qwid == 0:
+                        pw = decoder_model(encoder_hidden_state[0], sos)
+                    else:
+                        pw = decoder_model()
 
                     # get argmax()
                     _, w_id = pw.data.topk(1)
