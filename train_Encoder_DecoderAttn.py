@@ -1,5 +1,5 @@
 from Models.Encoder import Encoder
-from Models.Decoder import Decoder
+from Models.DecoderAttn import DecoderAttn
 from Preprocessing.DataReader import DataReader
 
 import numpy as np
@@ -31,6 +31,7 @@ visual_features_dim     = 4096
 # Decoder
 hidden_decoder_dim      = 128
 index2word              = dr.get_ind2word()
+max_length              = dr.get_question_max_length()
 
 # Training
 iterations              = 10
@@ -40,7 +41,7 @@ decoder_lr              = 0.001
 
 
 encoder_model = Encoder(vocab_size, word_embedding_dim, hidden_encoder_dim, word2index, visual_features_dim)
-decoder_model = Decoder(word_embedding_dim, hidden_decoder_dim, vocab_size)
+decoder_model = DecoderAttn(hidden_encoder_dim, hidden_decoder_dim, vocab_size, word_embedding_dim, max_length)
 
 decoder_loss_function = nn.NLLLoss()
 
@@ -108,10 +109,10 @@ for epoch in range(iterations):
                     # pass through decoder
                     if qwi == 0:
                         # for the first word, the decoder takes the encoder hidden state and the SOS token as input
-                        pw = decoder_model(encoder_hidden_state, encoder_model.sos)
+                        pw = decoder_model(encoder_out, encoder_hidden_state, encoder_model.sos)
                     else:
                         # for all other words, the last decoder output and last decoder hidden state will be used by the model
-                        pw = decoder_model()
+                        pw = decoder_model(encoder_out)
 
 
                     # get argmax()
