@@ -37,6 +37,8 @@ class Encoder(nn.Module):
         # Initiliaze the hidden state of the LSTM
         self.hidden_encoder = self.init_hidden()
 
+        self.sos = Variable(torch.randn(self.word_embedding_dim,1)).view(1,1,-1)
+
     def init_hidden(self):
         if use_cuda:
             return (autograd.Variable(torch.zeros(1, 1, self.hidden_encoder_dim)).cuda(),
@@ -54,7 +56,11 @@ class Encoder(nn.Module):
         sentence_embedding = Variable(torch.zeros(len(sentence.split()), self.word_embedding_dim))
 
         for i, w in enumerate(sentence.split()):
-            sentence_embedding[i] = self.word2embedd(w)
+            if w == '-SOS-':
+                sentence_embedding[i] = self.sos
+            else:
+                sentence_embedding[i] = self.word2embedd(w)
+
 
         # prepare visual features for concatenation
         visual_features_stack = torch.cat([Variable(torch.FloatTensor(visual_features).view(1,-1))] * len(sentence.split()))

@@ -24,7 +24,7 @@ dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_path=im
 # Encoder
 word2index              = dr.get_word2ind()
 vocab_size              = len(word2index)
-word_embedding_dim      = 100
+word_embedding_dim      = 128
 hidden_encoder_dim      = 128
 visual_features_dim     = 4096
 
@@ -40,7 +40,7 @@ decoder_lr              = 0.1
 
 
 encoder_model = Encoder(vocab_size, word_embedding_dim, hidden_encoder_dim, word2index, visual_features_dim)
-decoder_model = Decoder(hidden_encoder_dim, hidden_decoder_dim, vocab_size)
+decoder_model = Decoder(word_embedding_dim, hidden_decoder_dim, vocab_size)
 
 decoder_loss_function = nn.NLLLoss()
 
@@ -51,8 +51,6 @@ decoder_epoch_loss = torch.Tensor()
 
 game_ids = dr.get_game_ids()
 game_ids = game_ids[2:5]
-
-sos = Variable(torch.randn(100,1)).view(1,1,-1)
 
 for epoch in range(iterations):
 
@@ -73,6 +71,7 @@ for epoch in range(iterations):
         encoder_model.zero_grad()
         decoder_model.zero_grad()
 
+
         questions = dr.get_questions(gid)
         visual_features = dr.get_image_features(gid)
 
@@ -81,38 +80,45 @@ for epoch in range(iterations):
 
             prod_q = str()
 
-            if qid <= len(questions)-2:
+            if qid <= len(questions)-1:
                 # more questions to come
 
                 # encode question
-                encoder_out, encoder_hidden_state = encoder_model(q, visual_features)
+                if qid == 0:
+                    encoder_out, encoder_hidden_state = encoder_model('-SOS-', visual_features)
+                else:
+                    input_q = questions[qid-1] # input to encoder is previous question
+                    encoder_out, encoder_hidden_state = encoder_model(input_q, visual_features)
 
 
                 # get decoder target
-                next_question_length = len(questions[qid+1].split())
-
-                decoder_targets = Variable(torch.LongTensor(next_question_length)) # TODO add -1 when -EOS- is avail.
-                for qwi, qw in enumerate(questions[qid+1].split()): # TODO add [1:] slice when -SOS- is avail.
+                question_length = len(questions[qid].split())
+                decoder_targets = Variable(torch.LongTensor(question_length)) # TODO add -1 when -EOS- is avail.
+                for qwi, qw in enumerate(questions[qid].split()): # TODO add [1:] slice when -SOS- is avail.
                     decoder_targets[qwi] = word2index[qw]
 
                 # get produced question by decoder
-                for next_qwid in range(next_question_length-1):
+                for qwi in range(question_length-1):
                     # go as long as target or until ?/-EOS- token
 
                     # pass through decoder
-                    if next_qwid == 0:
-                        pw = decoder_model(encoder_hidden_state[0], sos)
+                    if qwi == 0:
+                        # for the first word, the decoder takes the encoder hidden state and the SOS token as input
+                        pw = decoder_model(encoder_hidden_state, encoder_model.sos)
                     else:
+                        # for all other words, the last decoder output and last decoder hidden state will be used by the model
                         pw = decoder_model()
+
 
                     # get argmax()
                     _, w_id = pw.data.topk(1)
                     w_id = str(w_id[0][0])
 
+
                     # save produced word
                     prod_q += index2word[w_id] + ' '
 
-                    decoder_loss += decoder_loss_function(pw, decoder_targets[next_qwid])
+                    decoder_loss += decoder_loss_function(pw, decoder_targets[qwi])
 
                     if w_id == word2index['?']: # TODO change to -EOS- once avail.
                         break
