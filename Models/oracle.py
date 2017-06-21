@@ -8,57 +8,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 import json
 
-#TODO: Checken of dit werkt
-from Preprocessing.DataReader import DataReader
-
-from torchtext.vocab import load_word_vectors
-
 import numpy
 import h5py
-
-def train():
-    # Load data
-    dr = DataReader()
-
-    #Settings LSTM
-    hidden_dim = 128 #Dit staat bij encoder van guesser iig
-
-    visual_len = 4096
-    #object_len = 
-    category_len = 
-    spatial_len = 4
-    embedding_dim = 128
-    vocab_size = 4200
-    
-    #Settings MLP
-    d_in = visual_len + spatial_len + category_len + hidden_dim #+ object_len
-    d_hin = (d_in+d_out)/2 #mean is nu wel erg groot?
-    d_hidden = (d_hin+d_out)/2
-    d_hout = (d_hidden+d_out)/2
-    d_out = 3
-
-    #Instance of Oracle om LSTM en MLP te runnen?
-    model = Oracle(embedding_dim,hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out)
-    loss = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters())
-
-    #Get Game/Question and run model
-    gameids = dr.get_game_ids()
-    for gid in gameids:
-        image = dr.get_image_features(gid)
-        #crop = dr.get_crop_features(gid) #TODO
-        obj = get_target_object(gid)
-        quas = dr.get_questions(gid)
-        answers = dr.get_answers(gid)
-        for question in quas:
-            outputs = model.forward(question, spatial_info, object_class, crop, image)
-            answer = answers(question) #TODO: answers en questions pairen?
-            cost = loss(outputs,answer)
-
-            # Backpropogate Errors ||TODO: also applies to LSTM?
-            optimizer.zero_grad() 
-            cost.backward()
-            optimizer.step()
 
 class Oracle(nn.Module()):
 
@@ -104,7 +55,7 @@ class Oracle(nn.Module()):
 
     def forward(self, question, spatial_info, object_class, crop, image, training=True):
         # Compute the one hot representation of the sentence
-        sentence_embedding = Variable(torch.zeros(len(sentence.split()), self.word_embedding_dim))
+        sentence_embedding = Variable(torch.zeros(len(question.split()), self.word_embedding_dim))
 
         for i, w in enumerate(sentence.split()):
             if w == '-SOS-':
@@ -119,8 +70,7 @@ class Oracle(nn.Module()):
         encoder_out, self.hidden = self.lstm(encoder_in, self.hidden)
 
         #Answer question
-        #TODO: Dimenties checken
-        mlp_in = torch.cat([encoder_out, visual_features, crop_features, spatial_info, object_class])
+        mlp_in = torch.cat([encoder_out, image, crop, spatial_info, object_class])
 
         # MLP pass
         mlp_out = self.mlp(mlp_in) 
@@ -128,7 +78,6 @@ class Oracle(nn.Module()):
         return mlp_out 
 
 
-if __name__ == '__main__':
-    train()
+
 
 
