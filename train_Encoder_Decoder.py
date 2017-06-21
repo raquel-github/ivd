@@ -36,6 +36,7 @@ iterations              = 100
 encoder_lr              = 0.0001
 decoder_lr              = 0.0001
 grad_clip               = 5.
+teacher_forcing         = False # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
 
 
 
@@ -99,7 +100,7 @@ for epoch in range(iterations):
                 question_length = len(q.split())
                 decoder_targets = Variable(torch.LongTensor(question_length)) # TODO add -1 when -EOS- is avail.
                 if use_cuda: decoder_targets.cuda()
-                
+
                 for qwi, qw in enumerate(q.split()): # TODO add [1:] slice when -SOS- is avail.
                     decoder_targets[qwi] = word2index[qw]
 
@@ -119,10 +120,13 @@ for epoch in range(iterations):
                     # pass through decoder
                     if qwi == 0:
                         # for the first word, the decoder takes the encoder hidden state and the SOS token as input
-                        pw = decoder_model(visual_features, encoder_hidden_state, encoder_model.sos)
+                        pw = decoder_model(visual_features, encoder_hidden_state, decoder_input=encoder_model.sos)
                     else:
                         # for all other words, the last decoder output and last decoder hidden state will be used by the model
-                        pw = decoder_model(visual_features)
+
+                        # if teacher forcing = True, the input to the decoder will be the word embedding of the previous question word
+                        decoder_input = encoder_model.word2embedd(q.split()[qwi-1]).view(1,1,-1) if teacher_forcing else None
+                        pw = decoder_model(visual_features, decoder_input=decoder_input)
 
 
                     # get argmax()
