@@ -45,12 +45,13 @@ decoder_loss_function = nn.NLLLoss()
 encoder_optimizer = optim.Adam(encoder_model.parameters(), encoder_lr)
 decoder_optimizer = optim.Adam(decoder_model.parameters(), decoder_lr)
 
-decoder_epoch_loss = torch.Tensor()
 
 game_ids = dr.get_game_ids()
 game_ids = game_ids[2710:2715]
 
 for epoch in range(iterations):
+
+    decoder_epoch_loss = torch.Tensor()
 
     for gid in game_ids:
 
