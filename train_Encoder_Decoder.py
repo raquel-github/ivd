@@ -2,6 +2,7 @@ from Models.Encoder import Encoder
 from Models.Decoder import Decoder
 from Preprocessing.DataReader import DataReader
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -38,6 +39,7 @@ decoder_lr              = 0.0001
 grad_clip               = 5.
 teacher_forcing         = True # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
 tf_decay_mode           = 'one-by-epoch'
+train_val_ratio         = 0.2
 
 def get_teacher_forcing_p(epoch):
     """ return the probability of appyling teacher forcing"""
@@ -60,16 +62,22 @@ decoder_optimizer = optim.Adam(decoder_model.parameters(), decoder_lr)
 
 
 game_ids = dr.get_game_ids()
-game_ids = game_ids[648:651]
+game_ids = game_ids[648:648+10]
+
+# make training validation split
+game_ids_val = list(np.random.choice(game_ids, int(train_val_ratio*len(game_ids))))
+game_ids_train = [gid for gid in game_ids if gid not in game_ids_val]
 
 for epoch in range(iterations):
 
     if use_cuda:
         decoder_epoch_loss = torch.cuda.FloatTensor()
+        decoder_epoch_loss_validation = torch.cuda.FloatTensor()
     else:
         decoder_epoch_loss = torch.Tensor()
+        decoder_epoch_loss_validation = torch.Tensor()
 
-    for gid in game_ids:
+    for gid in game_ids_train+game_ids_val:
 
         # check for successful training instance, else skip
         if dr.get_success(gid) == 0:
@@ -78,10 +86,10 @@ for epoch in range(iterations):
         #print("Processing game", gid)
 
         decoder_loss = 0
+        decoder_loss_validation = 0
 
         # Initiliaze encoder/decoder hidden state with 0
         encoder_model.hidden_encoder = encoder_model.init_hidden()
-
 
         # Set gradientns back to 0
         encoder_optimizer.zero_grad()
@@ -156,7 +164,10 @@ for epoch in range(iterations):
                     # save produced word
                     prod_q += index2word[str(w_id)] + ' '
 
-                    decoder_loss += decoder_loss_function(pw, decoder_targets[qwi])
+                    if gid in game_ids_train:
+                        decoder_loss += decoder_loss_function(pw, decoder_targets[qwi])
+                    else:
+                        decoder_loss_validation += decoder_loss_function(pw, decoder_targets[qwi])
 
                     if w_id == word2index['?']: # TODO change to -EOS- once avail.
                         break
@@ -164,19 +175,25 @@ for epoch in range(iterations):
                 if epoch % 10 == 0:
                     print(prod_q)
 
+            if gid in game_ids_train:
+                decoder_epoch_loss = torch.cat([decoder_epoch_loss, decoder_loss.data])
+            else:
+                decoder_epoch_loss_validation = torch.cat([decoder_epoch_loss_validation, decoder_loss_validation.data])
 
-            decoder_epoch_loss = torch.cat([decoder_epoch_loss, decoder_loss.data])
+        if gid in game_ids_train:
+            # do back-prop and optimization only for training datapoints
 
-        decoder_loss.backward()
+            decoder_loss.backward()
 
-        # clip gradients to prevent gradient explosion
-        nn.utils.clip_grad_norm(encoder_model.parameters(), max_norm=grad_clip)
-        nn.utils.clip_grad_norm(decoder_model.parameters(), max_norm=grad_clip)
+            # clip gradients to prevent gradient explosion
+            nn.utils.clip_grad_norm(encoder_model.parameters(), max_norm=grad_clip)
+            nn.utils.clip_grad_norm(decoder_model.parameters(), max_norm=grad_clip)
 
-        encoder_optimizer.step()
-        decoder_optimizer.step()
+            encoder_optimizer.step()
+            decoder_optimizer.step()
 
 
-    print("Epoch %i, Loss %f" %(epoch, torch.mean(decoder_epoch_loss)))
+
+    print("Epoch %i, Training-Loss %f, Validation-Loss %f" %(epoch, torch.mean(decoder_epoch_loss), torch.mean(decoder_epoch_loss_validation)))
 
 print("Training completed.")
