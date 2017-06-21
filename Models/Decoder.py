@@ -12,6 +12,9 @@ class Decoder(nn.Module):
         """
         Parameters
         hidden_encoder_dim      Dimensionaly of the hidden state of the encoder
+        hidden_decoder_dim      Dimensionaly of the hidden state of the decoder
+        visual_features_dim     Dimensionaly of the visual features
+        vocab_size              Size of the vocablurary used for the prediction
         """
 
         super(Decoder, self).__init__()
@@ -20,6 +23,7 @@ class Decoder(nn.Module):
         self.hidden_decoder_dim = hidden_decoder_dim
         self.visual_features_dim = visual_features_dim
         self.vocab_size = vocab_size
+
 
         self.decoder_lstm = nn.LSTM(self.word_embedding_dim + self.visual_features_dim, self.hidden_decoder_dim)
 
@@ -52,5 +56,3 @@ class Decoder(nn.Module):
         word_scores = F.log_softmax(word_space)
 
         return word_scores
-
-        
