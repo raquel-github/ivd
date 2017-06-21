@@ -63,7 +63,7 @@ decoder_optimizer = optim.Adam(decoder_model.parameters(), decoder_lr)
 
 
 game_ids = dr.get_game_ids()
-game_ids = game_ids[:1]
+game_ids = game_ids[:1500]
 
 
 
