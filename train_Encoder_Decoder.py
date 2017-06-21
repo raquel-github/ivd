@@ -24,11 +24,11 @@ word2index              = dr.get_word2ind()
 vocab_size              = len(word2index)
 word_embedding_dim      = 128
 hidden_encoder_dim      = 128
-visual_features_dim     = 4096
 
 # Decoder
 hidden_decoder_dim      = 128
 index2word              = dr.get_ind2word()
+visual_features_dim     = 4096
 
 # Training
 iterations              = 10
@@ -37,8 +37,8 @@ decoder_lr              = 0.0001
 
 
 
-encoder_model = Encoder(vocab_size, word_embedding_dim, hidden_encoder_dim, word2index, visual_features_dim)
-decoder_model = Decoder(word_embedding_dim, hidden_decoder_dim, vocab_size)
+encoder_model = Encoder(vocab_size, word_embedding_dim, hidden_encoder_dim, word2index)
+decoder_model = Decoder(word_embedding_dim, hidden_decoder_dim, visual_features_dim, vocab_size)
 
 decoder_loss_function = nn.NLLLoss()
 
@@ -67,8 +67,6 @@ for epoch in range(iterations):
 
 
         # Set gradientns back to 0
-        #encoder_model.zero_grad()
-        #decoder_model.zero_grad()
         encoder_optimizer.zero_grad()
         decoder_optimizer.zero_grad()
 
@@ -76,7 +74,7 @@ for epoch in range(iterations):
         # get the questions and the visual features of the current game
         questions = dr.get_questions(gid)
         answers = dr.get_answers(gid)
-        visual_features = dr.get_image_features(gid)
+        visual_features = torch.Tensor(dr.get_image_features(gid))
 
 
         for qid, q in enumerate(questions):
@@ -88,11 +86,11 @@ for epoch in range(iterations):
 
                 # encode question and answer
                 if qid == 0:
-                    encoder_out, encoder_hidden_state = encoder_model('-SOS-', visual_features)
+                    encoder_out, encoder_hidden_state = encoder_model('-SOS-')
                 else:
                     enc_input = questions[qid-1] # input to encoder is previous question
                     enc_input += ' ' + answers[qid-1]
-                    encoder_out, encoder_hidden_state = encoder_model(enc_input, visual_features)
+                    encoder_out, encoder_hidden_state = encoder_model(enc_input)
 
                 # get decoder target
                 question_length = len(q.split())
@@ -108,10 +106,10 @@ for epoch in range(iterations):
                     # pass through decoder
                     if qwi == 0:
                         # for the first word, the decoder takes the encoder hidden state and the SOS token as input
-                        pw = decoder_model(encoder_hidden_state, encoder_model.sos)
+                        pw = decoder_model(visual_features, encoder_hidden_state, encoder_model.sos)
                     else:
                         # for all other words, the last decoder output and last decoder hidden state will be used by the model
-                        pw = decoder_model()
+                        pw = decoder_model(visual_features)
 
 
                     # get argmax()
