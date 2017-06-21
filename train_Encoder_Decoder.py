@@ -2,7 +2,6 @@ from Models.Encoder import Encoder
 from Models.Decoder import Decoder
 from Preprocessing.DataReader import DataReader
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -16,7 +15,6 @@ images_path             = "train2014"
 images_features_path    = "Preprocessing/Data/image_features.h5"
 
 dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_path=images_path, images_features_path=images_features_path)
-
 
 
 ### Hyperparemters
@@ -34,8 +32,8 @@ index2word              = dr.get_ind2word()
 
 # Training
 iterations              = 10
-encoder_lr              = 0.001
-decoder_lr              = 0.001
+encoder_lr              = 0.0001
+decoder_lr              = 0.0001
 
 
 
@@ -77,6 +75,7 @@ for epoch in range(iterations):
 
         # get the questions and the visual features of the current game
         questions = dr.get_questions(gid)
+        answers = dr.get_answers(gid)
         visual_features = dr.get_image_features(gid)
 
 
@@ -87,20 +86,19 @@ for epoch in range(iterations):
             if qid <= len(questions)-1:
                 # more questions to come
 
-                # encode question
+                # encode question and answer
                 if qid == 0:
                     encoder_out, encoder_hidden_state = encoder_model('-SOS-', visual_features)
                 else:
-                    input_q = questions[qid-1] # input to encoder is previous question
-                    encoder_out, encoder_hidden_state = encoder_model(input_q, visual_features)
+                    enc_input = questions[qid-1] # input to encoder is previous question
+                    enc_input += ' ' + answers[qid-1]
+                    encoder_out, encoder_hidden_state = encoder_model(enc_input, visual_features)
 
                 # get decoder target
-                target_question = str()
-                question_length = len(questions[qid].split())
+                question_length = len(q.split())
                 decoder_targets = Variable(torch.LongTensor(question_length)) # TODO add -1 when -EOS- is avail.
-                for qwi, qw in enumerate(questions[qid].split()): # TODO add [1:] slice when -SOS- is avail.
+                for qwi, qw in enumerate(q.split()): # TODO add [1:] slice when -SOS- is avail.
                     decoder_targets[qwi] = word2index[qw]
-                    target_question += ' ' + qw
 
 
                 # get produced question by decoder

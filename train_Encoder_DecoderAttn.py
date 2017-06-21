@@ -43,6 +43,7 @@ decoder_lr              = 0.01
 encoder_model = Encoder(vocab_size, word_embedding_dim, hidden_encoder_dim, word2index, visual_features_dim)
 decoder_model = DecoderAttn(hidden_encoder_dim, hidden_decoder_dim, vocab_size, word_embedding_dim, max_length)
 
+
 decoder_loss_function = nn.NLLLoss()
 
 encoder_optimizer = optim.Adam(encoder_model.parameters(), encoder_lr)
@@ -74,6 +75,7 @@ for epoch in range(iterations):
 
         # get the questions and the visual features of the current game
         questions = dr.get_questions(gid)
+        answers = dr.get_answers(gid)
         visual_features = dr.get_image_features(gid)
 
 
@@ -84,22 +86,23 @@ for epoch in range(iterations):
             if qid <= len(questions)-1:
                 # more questions to come
 
-                # encode question word by word
+                # encode question word by word and save each encoder output
                 encoder_outputs = Variable(torch.zeros(max_length, hidden_encoder_dim))
                 if qid == 0:
                     encoder_outputs[0], encoder_hidden_state = encoder_model('-SOS-', visual_features)
                 else:
-                    for qwi, qw in enumerate(q.split()):
+                    enc_inputq = questions[qid-1]
+                    # add answer
+                    enc_input += ' ' + answers[qid-1]
+                    for qwi, qw in enumerate(enc_input.split()):
                         encoder_outputs[qwi] , encoder_hidden_state = encoder_model(qw, visual_features)
 
 
                 # get decoder target
-                target_question = str()
-                question_length = len(questions[qid].split())
+                question_length = len(q.split())
                 decoder_targets = Variable(torch.LongTensor(question_length)) # TODO add -1 when -EOS- is avail.
-                for qwi, qw in enumerate(questions[qid].split()): # TODO add [1:] slice when -SOS- is avail.
+                for qwi, qw in enumerate(q.split()): # TODO add [1:] slice when -SOS- is avail.
                     decoder_targets[qwi] = word2index[qw]
-                    target_question += ' ' + qw
 
 
                 # get produced question by decoder
