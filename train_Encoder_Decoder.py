@@ -8,6 +8,7 @@ import torch.optim as optim
 import torch.autograd as autograd
 from torch.autograd import Variable
 
+use_cuda = torch.cuda.is_available()
 
 data_path               = "../data/preprocessed.h5"
 indicies_path           = "../data/indices.json"
@@ -97,6 +98,8 @@ for epoch in range(iterations):
                 # get decoder target
                 question_length = len(q.split())
                 decoder_targets = Variable(torch.LongTensor(question_length)) # TODO add -1 when -EOS- is avail.
+                if use_cuda: decoder_targets.cuda()
+                
                 for qwi, qw in enumerate(q.split()): # TODO add [1:] slice when -SOS- is avail.
                     decoder_targets[qwi] = word2index[qw]
 
