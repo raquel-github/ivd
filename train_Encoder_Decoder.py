@@ -66,19 +66,23 @@ for epoch in range(iterations):
 
         # Initiliaze encoder/decoder hidden state with 0
         encoder_model.hidden_encoder = encoder_model.init_hidden()
-        decoder_model.hidden_decoder = decoder_model.init_hidden()
-
-        encoder_model.zero_grad()
-        decoder_model.zero_grad()
 
 
+        # Set gradientns back to 0
+        #encoder_model.zero_grad()
+        #decoder_model.zero_grad()
+        encoder_optimizer.zero_grad()
+        decoder_optimizer.zero_grad()
+
+
+        # get the questions and the visual features of the current game
         questions = dr.get_questions(gid)
         visual_features = dr.get_image_features(gid)
 
 
         for qid, q in enumerate(questions):
 
-            prod_q = str()
+            prod_q = str() # save the produced question here
 
             if qid <= len(questions)-1:
                 # more questions to come
@@ -98,8 +102,6 @@ for epoch in range(iterations):
                     decoder_targets[qwi] = word2index[qw]
                     target_question += ' ' + qw
 
-
-                #print("Target:", target_question)
 
                 # get produced question by decoder
                 for qwi in range(question_length-1):

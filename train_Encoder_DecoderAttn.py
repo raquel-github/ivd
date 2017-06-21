@@ -35,8 +35,8 @@ max_length              = dr.get_question_max_length()
 
 # Training
 iterations              = 10
-encoder_lr              = 0.001
-decoder_lr              = 0.001
+encoder_lr              = 0.01
+decoder_lr              = 0.01
 
 
 
@@ -65,31 +65,33 @@ for epoch in range(iterations):
 
         decoder_loss = 0
 
-        # Initiliaze encoder/decoder hidden state with 0
+        # Initiliaze encoder hidden state with 0
         encoder_model.hidden_encoder = encoder_model.init_hidden()
-        decoder_model.hidden_decoder = decoder_model.init_hidden()
 
-        encoder_model.zero_grad()
-        decoder_model.zero_grad()
+        # Set gradientns back to 0
+        encoder_optimizer.zero_grad()
+        decoder_optimizer.zero_grad()
 
-
+        # get the questions and the visual features of the current game
         questions = dr.get_questions(gid)
         visual_features = dr.get_image_features(gid)
 
 
         for qid, q in enumerate(questions):
 
-            prod_q = str()
+            prod_q = str() # save the produced question here
 
             if qid <= len(questions)-1:
                 # more questions to come
 
-                # encode question
+                # encode question word by word
+                encoder_outputs = Variable(torch.zeros(max_length, hidden_encoder_dim))
                 if qid == 0:
-                    encoder_out, encoder_hidden_state = encoder_model('-SOS-', visual_features)
+                    encoder_outputs[0], encoder_hidden_state = encoder_model('-SOS-', visual_features)
                 else:
-                    input_q = questions[qid-1] # input to encoder is previous question
-                    encoder_out, encoder_hidden_state = encoder_model(input_q, visual_features)
+                    for qwi, qw in enumerate(q.split()):
+                        encoder_outputs[qwi] , encoder_hidden_state = encoder_model(qw, visual_features)
+
 
                 # get decoder target
                 target_question = str()
@@ -100,8 +102,6 @@ for epoch in range(iterations):
                     target_question += ' ' + qw
 
 
-                #print("Target:", target_question)
-
                 # get produced question by decoder
                 for qwi in range(question_length-1):
                     # go as long as target or until ?/-EOS- token
@@ -109,10 +109,10 @@ for epoch in range(iterations):
                     # pass through decoder
                     if qwi == 0:
                         # for the first word, the decoder takes the encoder hidden state and the SOS token as input
-                        pw = decoder_model(encoder_out, encoder_hidden_state, encoder_model.sos)
+                        pw = decoder_model(encoder_outputs, encoder_hidden_state, encoder_model.sos)
                     else:
                         # for all other words, the last decoder output and last decoder hidden state will be used by the model
-                        pw = decoder_model(encoder_out)
+                        pw = decoder_model(encoder_outputs)
 
 
                     # get argmax()
