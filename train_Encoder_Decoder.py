@@ -34,7 +34,7 @@ index2word              = dr.get_ind2word()
 visual_features_dim     = 4096
 
 # Training
-iterations              = 100
+iterations              = 1000
 encoder_lr              = 0.0001
 decoder_lr              = 0.0001
 grad_clip               = 5.
@@ -63,7 +63,7 @@ decoder_optimizer = optim.Adam(decoder_model.parameters(), decoder_lr)
 
 
 game_ids = dr.get_game_ids()
-game_ids = game_ids[648:648+10]
+game_ids = game_ids[:1]
 
 
 
@@ -175,8 +175,13 @@ for epoch in range(iterations):
                     if w_id == word2index['?']: # TODO change to -EOS- once avail.
                         break
 
-                if epoch % 1000 == 0 and gid in [3, 6, 10, 13, 17, 648]:
-                    print(prod_q)
+                if gid in [0,3, 6, 10, 13, 17, 648]:
+                    with open('output.log', 'a') as out:
+                             out.write('Epoch: '+str(epoch) + ' GID: '+str(gid) + '\n')
+
+                if epoch % 20 == 0 and gid in [3, 6, 10, 13, 17, 648]:
+                    with open('output.log', 'a') as out:
+                             out.write(prod_q + '\n')
 
             if gid in game_ids_train:
                 decoder_epoch_loss = torch.cat([decoder_epoch_loss, decoder_loss.data])
