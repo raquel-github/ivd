@@ -38,7 +38,6 @@ decoder_lr              = 0.0001
 grad_clip               = 5.
 teacher_forcing         = True # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
 tf_decay_mode           = 'one-by-epoch'
-show_loss_after         = -1 # after n many games the average loss per game will be printed
 
 def get_teacher_forcing_p(epoch):
     """ return the probability of appyling teacher forcing"""
@@ -61,7 +60,7 @@ decoder_optimizer = optim.Adam(decoder_model.parameters(), decoder_lr)
 
 
 game_ids = dr.get_game_ids()
-game_ids = game_ids[648:648+10]
+game_ids = game_ids[648:651]
 
 for epoch in range(iterations):
 
@@ -70,7 +69,7 @@ for epoch in range(iterations):
     else:
         decoder_epoch_loss = torch.Tensor()
 
-    for game_counter, gid in enumerate(game_ids):
+    for gid in game_ids:
 
         # check for successful training instance, else skip
         if dr.get_success(gid) == 0:
@@ -79,7 +78,6 @@ for epoch in range(iterations):
         #print("Processing game", gid)
 
         decoder_loss = 0
-        batch_loss = 0 # for printing the loss before an epoch ends
 
         # Initiliaze encoder/decoder hidden state with 0
         encoder_model.hidden_encoder = encoder_model.init_hidden()
@@ -163,14 +161,7 @@ for epoch in range(iterations):
                     if w_id == word2index['?']: # TODO change to -EOS- once avail.
                         break
 
-                if game_counter % show_loss_after == 0 and game_counter != 0:
-
-                    batch_loss = decoder_loss.data[0] - batch_loss
-                    print("The averge loss per game was: %f" %( batch_loss / show_loss_after))
-                    batch_loss = decoder_loss.data[0]
-
                 if epoch % 10 == 0:
-                    # on the n-th epoch, print every produced question
                     print(prod_q)
 
 
