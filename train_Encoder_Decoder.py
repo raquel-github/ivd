@@ -3,6 +3,7 @@ from Models.Decoder import Decoder
 from Preprocessing.DataReader import DataReader
 
 import numpy as np
+from time import time
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -11,10 +12,10 @@ from torch.autograd import Variable
 
 use_cuda = torch.cuda.is_available()
 
-data_path               = "../data/preprocessed.h5"
-indicies_path           = "../data/indices.json"
+data_path               = "../ivd_data/preprocessed.h5"
+indicies_path           = "../ivd_data/indices.json"
 images_path             = "train2014"
-images_features_path    = "../data/image_features.h5"
+images_features_path    = "../ivd_data/image_features.h5"
 
 dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_path=images_path, images_features_path=images_features_path)
 
@@ -64,12 +65,14 @@ decoder_optimizer = optim.Adam(decoder_model.parameters(), decoder_lr)
 game_ids = dr.get_game_ids()
 game_ids = game_ids[648:648+10]
 
+
+
 # make training validation split
 game_ids_val = list(np.random.choice(game_ids, int(train_val_ratio*len(game_ids))))
 game_ids_train = [gid for gid in game_ids if gid not in game_ids_val]
 
 for epoch in range(iterations):
-
+    start = time()
     if use_cuda:
         decoder_epoch_loss = torch.cuda.FloatTensor()
         decoder_epoch_loss_validation = torch.cuda.FloatTensor()
@@ -172,7 +175,7 @@ for epoch in range(iterations):
                     if w_id == word2index['?']: # TODO change to -EOS- once avail.
                         break
 
-                if epoch % 10 == 0:
+                if epoch % 1000 == 0 and gid in [3, 6, 10, 648]:
                     print(prod_q)
 
             if gid in game_ids_train:
@@ -194,6 +197,6 @@ for epoch in range(iterations):
 
 
 
-    print("Epoch %i, Training-Loss %f, Validation-Loss %f" %(epoch, torch.mean(decoder_epoch_loss), torch.mean(decoder_epoch_loss_validation)))
+    print("Epoch %i, Time taken %.2f, Training-Loss %f, Validation-Loss %f" %(epoch, time()-start,torch.mean(decoder_epoch_loss), torch.mean(decoder_epoch_loss_validation)))
 
 print("Training completed.")
