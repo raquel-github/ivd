@@ -36,8 +36,14 @@ iterations              = 100
 encoder_lr              = 0.0001
 decoder_lr              = 0.0001
 grad_clip               = 5.
-teacher_forcing         = False # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
+teacher_forcing         = True # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
+tf_decay_mode           = 'one-by-epoch'
 
+def get_teacher_forcing_p(epoch):
+    """ return the probability of appyling teacher forcing"""
+    epoch += 1
+    if tf_decay_mode == 'one-by-epoch': return 1/epoch
+    if tf_decay_mode == 'one-by-epoch-squared': return 1/(epoch**2)
 
 
 encoder_model = Encoder(vocab_size, word_embedding_dim, hidden_encoder_dim, word2index)
@@ -125,7 +131,11 @@ for epoch in range(iterations):
                         # for all other words, the last decoder output and last decoder hidden state will be used by the model
 
                         # if teacher forcing = True, the input to the decoder will be the word embedding of the previous question word
-                        decoder_input = encoder_model.word2embedd(q.split()[qwi-1]).view(1,1,-1) if teacher_forcing else None
+                        if teacher_forcing and torch.rand(1)[0] > get_teacher_forcing_p(epoch):
+                            decoder_input = encoder_model.word2embedd(q.split()[qwi-1]).view(1,1,-1)
+                        else:
+                            decoder_input = None
+
                         pw = decoder_model(visual_features, decoder_input=decoder_input)
 
 
