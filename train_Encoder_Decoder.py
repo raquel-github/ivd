@@ -34,6 +34,7 @@ visual_features_dim     = 4096
 iterations              = 100
 encoder_lr              = 0.0001
 decoder_lr              = 0.0001
+grad_clip               = 5.
 
 
 
@@ -99,7 +100,7 @@ for epoch in range(iterations):
                 for qwi, qw in enumerate(q.split()): # TODO add [1:] slice when -SOS- is avail.
                     decoder_targets[qwi] = word2index[qw]
 
-                """"
+                """
                 print(q)
                 t = str()
                 for tid in range(question_length):
@@ -130,7 +131,6 @@ for epoch in range(iterations):
                     prod_q += index2word[str(w_id)] + ' '
 
                     decoder_loss += decoder_loss_function(pw, decoder_targets[qwi])
-                    # TODO normalize loss on # of words
 
                     if w_id == word2index['?']: # TODO change to -EOS- once avail.
                         break
@@ -142,6 +142,10 @@ for epoch in range(iterations):
             decoder_epoch_loss = torch.cat([decoder_epoch_loss, decoder_loss.data])
 
         decoder_loss.backward()
+
+        # clip gradients to prevent gradient explosion
+        nn.utils.clip_grad_norm(encoder_model.parameters(), max_norm=grad_clip)
+        nn.utils.clip_grad_norm(decoder_model.parameters(), max_norm=grad_clip)
 
         encoder_optimizer.step()
         decoder_optimizer.step()
