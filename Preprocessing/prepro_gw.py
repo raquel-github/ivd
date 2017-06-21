@@ -63,7 +63,8 @@ def tokenize_data(data, word_count = False):
 
             # Append the tokenized question and answer (only one word) to the list of tokens
             tokenized_question = word_tokenize(question)
-            question_tokens.append(tokenized_question)
+            tokenized_question_preprocessed = ['-SOS-'] + [word.lower() for word in tokenized_question] + ['-EOS-']
+            question_tokens.append(tokenized_question_preprocessed)
             answer_tokens.append(answer)
 
             # Update the word count for every word in the question and answer
@@ -255,7 +256,7 @@ if __name__ == '__main__':
     word_counts_training['UNK'] = 5
 
     # Include all words that need to be in the vocabulary
-    vocab = [word for word in word_counts_training if word_counts_training[word] >= 5]
+    vocab = [word for word in word_counts_training if word_counts_training[word] >= 5 or word in ['Yes', 'No', 'N/A']]
     
     # Print the number of (unique) words
     print("Number of words in vocabulary: %d" % len(vocab))
