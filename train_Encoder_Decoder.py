@@ -175,11 +175,8 @@ for epoch in range(iterations):
                     if w_id == word2index['?']: # TODO change to -EOS- once avail.
                         break
 
-                if gid in [0,3, 6, 10, 13, 17, 648]:
-                    with open('output.log', 'a') as out:
-                             out.write('Epoch: '+str(epoch) + ' GID: '+str(gid) + '\n')
-
-                if epoch % 20 == 0 and gid in [0, 3, 6, 10, 13, 17, 648]:
+                
+                if epoch % 20 == 0 and gid in [3, 6, 10, 13, 17, 648]:
                     with open('output.log', 'a') as out:
                              out.write(prod_q + '\n')
 
