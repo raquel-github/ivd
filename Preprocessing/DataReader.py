@@ -113,6 +113,9 @@ class DataReader():
 
         return questions
 
+    def get_question_max_length(self):
+        return len(self.questions_training[0][0])
+
 
     def get_answers(self, game_id):
         """  given a game id, returns all answers """

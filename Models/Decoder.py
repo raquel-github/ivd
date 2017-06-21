@@ -20,31 +20,22 @@ class Decoder(nn.Module):
         self.vocab_size = vocab_size
 
         self.decoder_lstm = nn.LSTM(self.word_embedding_dim, self.hidden_decoder_dim)
-
-        self.hidden_decoder = self.init_hidden()
+        
 
         self.hidden2word = nn.Linear(self.hidden_decoder_dim, self.vocab_size)
-
-
-    def init_hidden(self):
-        if use_cuda:
-            return (autograd.Variable(torch.zeros(1, 1, self.hidden_decoder_dim)).cuda(),
-                    autograd.Variable(torch.zeros(1, 1, self.hidden_decoder_dim)).cuda())
-        else:
-            return (autograd.Variable(torch.zeros(1, 1, self.hidden_decoder_dim)),
-                    autograd.Variable(torch.zeros(1, 1, self.hidden_decoder_dim)))
 
 
     def forward(self, hidden_encoder=None, decoder_input=None):
 
         if hidden_encoder:
+            # if encoder hidden state is provided, copy into decoder hidden state
             self.hidden_decoder = hidden_encoder
 
         if decoder_input:
-            self.lstm_out, self.hidden_decoder = self.decoder_lstm(decoder_input, self.hidden_decoder)
+            # if decoder input is provided, copy into previous lstm_out (which will be used as next input)
+            self.lstm_out = decoder_input
 
-        else:
-            self.lstm_out, self.hidden_decoder = self.decoder_lstm(self.lstm_out, self.hidden_decoder)
+        self.lstm_out, self.hidden_decoder = self.decoder_lstm(self.lstm_out, self.hidden_decoder)
 
         # mapping hidden state to word output
         word_space = self.hidden2word(self.lstm_out.view(1,-1))

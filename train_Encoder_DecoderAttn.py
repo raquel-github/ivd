@@ -1,7 +1,8 @@
 from Models.Encoder import Encoder
-from Models.Decoder import Decoder
+from Models.DecoderAttn import DecoderAttn
 from Preprocessing.DataReader import DataReader
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -17,6 +18,7 @@ images_features_path    = "Preprocessing/Data/image_features.h5"
 dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_path=images_path, images_features_path=images_features_path)
 
 
+
 ### Hyperparemters
 
 # Encoder
@@ -29,16 +31,18 @@ visual_features_dim     = 4096
 # Decoder
 hidden_decoder_dim      = 128
 index2word              = dr.get_ind2word()
+max_length              = dr.get_question_max_length()
 
 # Training
 iterations              = 10
-encoder_lr              = 0.0001
-decoder_lr              = 0.0001
+encoder_lr              = 0.01
+decoder_lr              = 0.01
 
 
 
 encoder_model = Encoder(vocab_size, word_embedding_dim, hidden_encoder_dim, word2index, visual_features_dim)
-decoder_model = Decoder(word_embedding_dim, hidden_decoder_dim, vocab_size)
+decoder_model = DecoderAttn(hidden_encoder_dim, hidden_decoder_dim, vocab_size, word_embedding_dim, max_length)
+
 
 decoder_loss_function = nn.NLLLoss()
 
@@ -62,16 +66,12 @@ for epoch in range(iterations):
 
         decoder_loss = 0
 
-        # Initiliaze encoder/decoder hidden state with 0
+        # Initiliaze encoder hidden state with 0
         encoder_model.hidden_encoder = encoder_model.init_hidden()
 
-
         # Set gradientns back to 0
-        #encoder_model.zero_grad()
-        #decoder_model.zero_grad()
         encoder_optimizer.zero_grad()
         decoder_optimizer.zero_grad()
-
 
         # get the questions and the visual features of the current game
         questions = dr.get_questions(gid)
@@ -86,13 +86,17 @@ for epoch in range(iterations):
             if qid <= len(questions)-1:
                 # more questions to come
 
-                # encode question and answer
+                # encode question word by word and save each encoder output
+                encoder_outputs = Variable(torch.zeros(max_length, hidden_encoder_dim))
                 if qid == 0:
-                    encoder_out, encoder_hidden_state = encoder_model('-SOS-', visual_features)
+                    encoder_outputs[0], encoder_hidden_state = encoder_model('-SOS-', visual_features)
                 else:
-                    enc_input = questions[qid-1] # input to encoder is previous question
+                    enc_inputq = questions[qid-1]
+                    # add answer
                     enc_input += ' ' + answers[qid-1]
-                    encoder_out, encoder_hidden_state = encoder_model(enc_input, visual_features)
+                    for qwi, qw in enumerate(enc_input.split()):
+                        encoder_outputs[qwi] , encoder_hidden_state = encoder_model(qw, visual_features)
+
 
                 # get decoder target
                 question_length = len(q.split())
@@ -108,10 +112,10 @@ for epoch in range(iterations):
                     # pass through decoder
                     if qwi == 0:
                         # for the first word, the decoder takes the encoder hidden state and the SOS token as input
-                        pw = decoder_model(encoder_hidden_state, encoder_model.sos)
+                        pw = decoder_model(encoder_outputs, encoder_hidden_state, encoder_model.sos)
                     else:
                         # for all other words, the last decoder output and last decoder hidden state will be used by the model
-                        pw = decoder_model()
+                        pw = decoder_model(encoder_outputs)
 
 
                     # get argmax()

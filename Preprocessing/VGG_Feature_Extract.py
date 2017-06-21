@@ -21,7 +21,7 @@ class VGG_Feature_Extract():
         # compute the mean and std. of all pixels for image normalization
         # mean, std = self.get_mean_std()
 
-        # Using the calculated mean and std
+        # Using the imagenet mean and std
         mean =  [0.485, 0.456, 0.406]
         std  =  [0.229, 0.224, 0.225]
 
@@ -31,7 +31,6 @@ class VGG_Feature_Extract():
            std=std
         )
 
-        print("Mean: ", mean,  "Std: ", std)
 
         # preprocessing pipeline
         self.preprocess = transforms.Compose([
