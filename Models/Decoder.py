@@ -43,7 +43,10 @@ class Decoder(nn.Module):
 
 
         # get the input to the LSTM encoder by concatenating word embeddings and visual features
-        visual_features = Variable(visual_features.view(1, 1, -1))
+        if use_cuda:
+            visual_features = Variable(visual_features.view(1, 1, -1)).cuda()
+        else:
+            visual_features = Variable(visual_features.view(1, 1, -1))
 
         decoder_in = torch.cat([self.lstm_out, visual_features], dim=2)
 
@@ -55,4 +58,5 @@ class Decoder(nn.Module):
         # p(w)
         word_scores = F.log_softmax(word_space)
 
+        # print('Decoder Done')
         return word_scores

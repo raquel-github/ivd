@@ -5,6 +5,7 @@ from torch.autograd import Variable
 
 
 use_cuda = torch.cuda.is_available()
+# use_cuda = False
 
 class Encoder(nn.Module):
 
@@ -28,7 +29,10 @@ class Encoder(nn.Module):
         self.hidden_encoder_dim = hidden_encoder_dim
 
         # Word embedding Training Model
-        self.word_embeddings = nn.Embedding(vocab_size, word_embedding_dim)
+        if use_cuda: 
+            self.word_embeddings = nn.Embedding(vocab_size, word_embedding_dim).cuda()
+        else:
+            self.word_embeddings = nn.Embedding(vocab_size, word_embedding_dim)
 
         # Encoder Model
         self.encoder_lstm = nn.LSTM(word_embedding_dim, hidden_encoder_dim)
@@ -36,7 +40,10 @@ class Encoder(nn.Module):
         # Initiliaze the hidden state of the LSTM
         self.hidden_encoder = self.init_hidden()
 
-        self.sos = Variable(torch.randn(self.word_embedding_dim,1)).view(1,1,-1)
+        if use_cuda:
+            self.sos = Variable(torch.randn(self.word_embedding_dim,1)).view(1,1,-1).cuda()
+        else:
+            self.sos = Variable(torch.randn(self.word_embedding_dim,1)).view(1,1,-1)
 
     def init_hidden(self):
         if use_cuda:
@@ -47,12 +54,18 @@ class Encoder(nn.Module):
                     autograd.Variable(torch.zeros(1, 1, self.hidden_encoder_dim)))
 
     def word2embedd(self, w):
-        return self.word_embeddings(Variable(torch.LongTensor([self.word2index[w]])))
+        if use_cuda:
+            return self.word_embeddings(Variable(torch.LongTensor([self.word2index[w]])).cuda())
+        else:
+            return self.word_embeddings(Variable(torch.LongTensor([self.word2index[w]])))
 
     def forward(self, sentence):
 
         # compute the one hot representation of the sentence
-        sentence_embedding = Variable(torch.zeros(len(sentence.split()), self.word_embedding_dim))
+        if use_cuda:
+            sentence_embedding = Variable(torch.zeros(len(sentence.split()), self.word_embedding_dim)).cuda()
+        else:
+            sentence_embedding = Variable(torch.zeros(len(sentence.split()), self.word_embedding_dim))
 
         for i, w in enumerate(sentence.split()):
             if w == '-SOS-':
@@ -66,5 +79,5 @@ class Encoder(nn.Module):
         # pass word embeddings through encoder LSTM and get output and hidden state
         encoder_out, self.hidden_encoder = self.encoder_lstm(sentence_embedding, self.hidden_encoder)
 
-
+        # print('Encoder Done')
         return encoder_out, self.hidden_encoder

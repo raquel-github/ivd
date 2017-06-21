@@ -42,6 +42,10 @@ grad_clip               = 5.
 encoder_model = Encoder(vocab_size, word_embedding_dim, hidden_encoder_dim, word2index)
 decoder_model = Decoder(word_embedding_dim, hidden_decoder_dim, visual_features_dim, vocab_size)
 
+if use_cuda:
+    encoder_model.cuda()
+    decoder_model.cuda()
+
 decoder_loss_function = nn.NLLLoss()
 
 encoder_optimizer = optim.Adam(encoder_model.parameters(), encoder_lr)
@@ -53,7 +57,10 @@ game_ids = game_ids[648:651]
 
 for epoch in range(iterations):
 
-    decoder_epoch_loss = torch.Tensor()
+    if use_cuda:
+        decoder_epoch_loss = torch.cuda.FloatTensor()
+    else:
+        decoder_epoch_loss = torch.Tensor()
 
     for gid in game_ids:
 
@@ -97,8 +104,10 @@ for epoch in range(iterations):
 
                 # get decoder target
                 question_length = len(q.split())
-                decoder_targets = Variable(torch.LongTensor(question_length)) # TODO add -1 when -EOS- is avail.
-                if use_cuda: decoder_targets.cuda()
+                if use_cuda:
+                    decoder_targets = Variable(torch.LongTensor(question_length)).cuda() # TODO add -1 when -EOS- is avail.
+                else:
+                    decoder_targets = Variable(torch.LongTensor(question_length)) # TODO add -1 when -EOS- is avail.
                 
                 for qwi, qw in enumerate(q.split()): # TODO add [1:] slice when -SOS- is avail.
                     decoder_targets[qwi] = word2index[qw]
