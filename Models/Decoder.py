@@ -52,3 +52,5 @@ class Decoder(nn.Module):
         word_scores = F.log_softmax(word_space)
 
         return word_scores
+
+        

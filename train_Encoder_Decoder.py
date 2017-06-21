@@ -9,10 +9,10 @@ import torch.autograd as autograd
 from torch.autograd import Variable
 
 
-data_path               = "Preprocessing/Data/preprocessed.h5"
-indicies_path           = "Preprocessing/Data/indices.json"
+data_path               = "../data/preprocessed.h5"
+indicies_path           = "../data/indices.json"
 images_path             = "train2014"
-images_features_path    = "Preprocessing/Data/image_features.h5"
+images_features_path    = "../data/image_features.h5"
 
 dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_path=images_path, images_features_path=images_features_path)
 
@@ -31,7 +31,7 @@ index2word              = dr.get_ind2word()
 visual_features_dim     = 4096
 
 # Training
-iterations              = 10
+iterations              = 100
 encoder_lr              = 0.0001
 decoder_lr              = 0.0001
 
@@ -47,7 +47,7 @@ decoder_optimizer = optim.Adam(decoder_model.parameters(), decoder_lr)
 
 
 game_ids = dr.get_game_ids()
-game_ids = game_ids[2710:2715]
+game_ids = game_ids[648:651]
 
 for epoch in range(iterations):
 
@@ -59,7 +59,7 @@ for epoch in range(iterations):
         if dr.get_success(gid) == 0:
             continue
 
-        print("Processing game", gid)
+        #print("Processing game", gid)
 
         decoder_loss = 0
 
@@ -99,6 +99,14 @@ for epoch in range(iterations):
                 for qwi, qw in enumerate(q.split()): # TODO add [1:] slice when -SOS- is avail.
                     decoder_targets[qwi] = word2index[qw]
 
+                """"
+                print(q)
+                t = str()
+                for tid in range(question_length):
+                    t += index2word[str(decoder_targets[tid].data[0])]
+
+                print(t)
+                """
 
                 # get produced question by decoder
                 for qwi in range(question_length-1):
@@ -115,19 +123,20 @@ for epoch in range(iterations):
 
                     # get argmax()
                     _, w_id = pw.data.topk(1)
-                    w_id = str(w_id[0][0])
+                    w_id = w_id[0][0]
 
 
                     # save produced word
-                    prod_q += index2word[w_id] + ' '
+                    prod_q += index2word[str(w_id)] + ' '
 
                     decoder_loss += decoder_loss_function(pw, decoder_targets[qwi])
+                    # TODO normalize loss on # of words
 
                     if w_id == word2index['?']: # TODO change to -EOS- once avail.
                         break
 
-
-                print(prod_q)
+                if epoch % 10 == 0:
+                    print(prod_q)
 
 
             decoder_epoch_loss = torch.cat([decoder_epoch_loss, decoder_loss.data])
