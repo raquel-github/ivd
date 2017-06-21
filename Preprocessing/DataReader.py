@@ -156,6 +156,10 @@ class DataReader():
 
         return categories
 
+    def get_correct_object_id(self, game_id):
+        """ given a gmae id returns correct object id """
+        return correct_object_training[game_id]
+
 
     def get_success(self, game_id):
         """ given a game id, returns whether the guesses has been successful or not """
