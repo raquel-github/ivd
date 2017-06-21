@@ -175,7 +175,7 @@ for epoch in range(iterations):
                     if w_id == word2index['?']: # TODO change to -EOS- once avail.
                         break
 
-                if epoch % 1000 == 0 and gid in [3, 6, 10, 648]:
+                if epoch % 1000 == 0 and gid in [3, 6, 10, 13, 17, 648]:
                     print(prod_q)
 
             if gid in game_ids_train:
