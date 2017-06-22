@@ -22,4 +22,4 @@ class Decider(nn.Module):
         )
 
     def forward(self, hidden_encoder):
-        return self.decider_model(hidden_encoder)
+        return self.decider_model(hidden_encoder[0][0])

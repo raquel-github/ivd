@@ -27,14 +27,16 @@ word2index              = dr.get_word2ind()
 vocab_size              = len(word2index)
 word_embedding_dim      = 128
 hidden_encoder_dim      = 128
+encoder_model_path      = 'Models/bin/enc'
 
 # Decoder
 hidden_decoder_dim      = 128
 index2word              = dr.get_ind2word()
 visual_features_dim     = 4096
+decoder_model_path      = 'Models/bin/dec'
 
 # Training
-iterations              = 100
+iterations              = 1
 encoder_lr              = 0.01
 decoder_lr              = 0.05
 grad_clip               = 5.
@@ -203,3 +205,8 @@ for epoch in range(iterations):
     print("Epoch %03d, Time taken %.2f, Training-Loss %.5f, Validation-Loss %.5f" %(epoch, time()-start,torch.mean(decoder_epoch_loss), torch.mean(decoder_epoch_loss_validation)))
 
 print("Training completed.")
+
+torch.save(encoder_model.state_dict(), encoder_model_path)
+torch.save(decoder_model.state_dict(), decoder_model_path)
+
+print('Models saved.')

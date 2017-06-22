@@ -27,7 +27,7 @@ class Guesser(nn.Module):
 
         self.mlp_model = nn.Sequential(
             nn.Linear(self.object_embedding_dim + self.spatial_dim, 64),
-            nn.RelU(),
+            nn.ReLU(),
             nn.Linear(64, self.hidden_encoder_dim)
         )
 
