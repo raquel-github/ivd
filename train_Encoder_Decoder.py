@@ -37,10 +37,10 @@ decoder_model_path      = 'Models/bin/dec'
 
 # Training
 iterations              = 100
-encoder_lr              = 0.01
-decoder_lr              = 0.05
+encoder_lr              = 0.0001
+decoder_lr              = 0.0005
 grad_clip               = 5.
-teacher_forcing         = False # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
+teacher_forcing         = True # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
 tf_decay_mode           = 'one-by-epoch-squared'
 train_val_ratio         = 0.2
 save_models             = False

@@ -64,9 +64,11 @@ def create_batch_matrix(batch, dr, word2index, pad_token):
         for _ in range(max_dec_length-len(db)):
             decoder_batch_list[i].append(pad_token)
 
-    encoder_batch_matrix = torch.Tensor(encoder_batch_list)
-    decoder_batch_matrix = torch.Tensor(decoder_batch_list)
+    encoder_batch_matrix = encoder_batch_list
+    decoder_batch_matrix = decoder_batch_list
 
+    print(type(encoder_batch_matrix))
+    print(type(decoder_batch_matrix))
     return encoder_batch_matrix, decoder_batch_matrix
 
 
