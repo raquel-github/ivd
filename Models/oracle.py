@@ -14,12 +14,12 @@ import h5py
 class Oracle(nn.Module()):
 
     # hidden_dim: Dimensionality of output of LSTM block.
-    # embedding_dim: 100? Nu dus vocabulary size? (LSTM)
+    # embedding_dim: (inputsize LSTM)
     # d_in: De lengte van de totale inputvector (MLP)
     # d_hin/d_hidden/d_hout: dimenties van hidden layer: 
     # --- helft van de dimensies die het verbind, recursively, voor gradual overgang.
     # d_out: 3 (Yes,No,N/A)
-    def __init__(self,vocab_size, embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out)
+    def __init__(self,vocab_size, embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out):
         # Dit weet ik allemaal niet zo goed meer: is dit nodig?
         super(Oracle, self).__init__()
         self.hidden_dim = hidden_dim
@@ -61,7 +61,7 @@ class Oracle(nn.Module()):
         encoder_in = sentence_embedding.view(1,1,-1)
         
         # LSTM pass
-        self.hidden = self.init_hidden 
+        self.hidden = self.init_hidden() 
         encoder_out = self.lstm(encoder_in, self.hidden)
 
         #Answer question

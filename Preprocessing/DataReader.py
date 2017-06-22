@@ -37,19 +37,23 @@ class DataReader():
 
 
     def get_word2ind(self):
-        """  """
+        """ return the word2index dictionary """
         return self.word2ind
 
     def get_ind2word(self):
+        """ return the index2word dictionary """
         return self.ind2word
 
     def get_categories_length(self):
+        """ return the number of object categories """
         return len(self.categories)
 
     def get_cat2id(self):
+        """ return the category to categoryID dictionary """
         return self.categories
 
     def get_target_object(self, game_id):
+        """ returns the target object, i.e. the object to be guessed """
         return self.correct_object_training[game_id]
 
     def get_game_ids(self):
@@ -136,7 +140,7 @@ class DataReader():
         return objects
 
 
-    def get_object_bbox(self, game_id):
+    def get_object_bboxes(self, game_id):
         """ given a game id, returns the bounding boxes of all objects in the same order as get_object_ids """
         bbox = self.objects_bbox_training[game_id]
         bbox = [list(b) for b in bbox]
@@ -145,9 +149,9 @@ class DataReader():
 
     def get_image_meta(self, game_id):
         """ returns the required metadata for an image, which is the bbox, width and height """
-        bbox = get_object_bbox(game_id)
-        width, height = get_image_width_height(game_id)
-        return [bbox, width, height]
+        bboxes = self.get_object_bboxes(game_id)
+        width, height = self.get_image_width_height(game_id)
+        return [bboxes, width, height]
 
     def get_category_id(self, game_id):
         """ given a game id, returns the categories of the objects in the image """
