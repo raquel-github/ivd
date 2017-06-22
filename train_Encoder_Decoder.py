@@ -36,13 +36,14 @@ visual_features_dim     = 4096
 decoder_model_path      = 'Models/bin/dec'
 
 # Training
-iterations              = 1
+iterations              = 100
 encoder_lr              = 0.01
 decoder_lr              = 0.05
 grad_clip               = 5.
 teacher_forcing         = False # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
 tf_decay_mode           = 'one-by-epoch-squared'
 train_val_ratio         = 0.2
+save_models             = False
 
 def get_teacher_forcing_p(epoch):
     """ return the probability of appyling teacher forcing at a given epoch """
@@ -181,7 +182,9 @@ for epoch in range(iterations):
                              out.write(prod_q + '\n')
                 """
                 if epoch % 10 == 0:
-                    print(prod_q)
+                    with open('output_tim.log', 'a') as out:
+                             out.write("%03d, %i, %i, %s\n" %(epoch, gid, qid, prod_q))
+                    #print(gid, prod_q)
 
             if gid in game_ids_train:
                 decoder_epoch_loss = torch.cat([decoder_epoch_loss, decoder_loss.data])
@@ -206,7 +209,8 @@ for epoch in range(iterations):
 
 print("Training completed.")
 
-torch.save(encoder_model.state_dict(), encoder_model_path)
-torch.save(decoder_model.state_dict(), decoder_model_path)
+if save_models:
+    torch.save(encoder_model.state_dict(), encoder_model_path)
+    torch.save(decoder_model.state_dict(), decoder_model_path)
 
 print('Models saved.')

@@ -1,0 +1,45 @@
+000, 1, 0, 10 white/grey white/grey white/grey white/grey 
+000, 1, 1, 10 white/grey white/grey white/grey 
+000, 2, 0, is ? ? ? 
+000, 2, 1, a ? ? ? 
+000, 2, 2, a ? ? ? ? ? 
+000, 2, 3, a ? ? ? ? ? 
+000, 2, 4, a ? ? ? ? 
+000, 2, 5, a ? ? ? ? ? 
+000, 2, 6, in ? ? ? ? ? ? 
+000, 2, 7, a ? ? ? ? ? ? ? ? ? 
+000, 3, 0, is ? ? ? ? 
+000, 3, 1, is ? ? ? ? ? 
+000, 3, 2, is ? ? ? ? 
+000, 3, 3, is ? ? ? ? ? ? 
+000, 3, 4, is ? ? ? ? ? ? ? 
+000, 3, 5, is ? ? ? ? ? ? 
+000, 3, 6, is ? ? ? ? ? ? 
+000, 4, 0, is it the the 
+000, 4, 1, is the the the 
+000, 4, 2, is the the the 
+000, 4, 3, is the the the the the 
+000, 6, 0, is is it it it 
+000, 6, 1, is is is it it 
+000, 6, 2, is is is it 
+000, 6, 3, is is it it it it 
+000, 6, 4, is is it it it it 
+000, 6, 5, is is it it it it 
+000, 6, 6, is is it it 
+000, 7, 0, is it ? ? ? ? ? 
+000, 7, 1, is ? ? ? ? ? 
+000, 7, 2, is ? ? ? ? ? 
+000, 7, 3, is ? ? ? ? ? 
+000, 7, 4, is ? ? ? ? 
+000, 7, 5, is ? ? ? ? ? 
+000, 7, 6, is ? ? ? ? 
+000, 7, 7, is is ? ? ? 
+000, 8, 0, is it ? ? ? 
+000, 8, 1, is it ? ? ? 
+000, 8, 2, is in in in on ? 
+000, 9, 0, is it ? ? ? 
+000, 9, 1, is it it it it 
+000, 5, 0, is appliance appliance appliance appliance 
+000, 5, 1, is it it an an 
+000, 0, 0, is appliance appliance appliance appliance 
+000, 0, 1, is it it an an appliance 
