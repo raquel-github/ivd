@@ -1,3 +1,5 @@
+# Create the crops of the correct objects
+
 from PIL import Image
 import urllib
 from DataReader import DataReader
@@ -16,8 +18,6 @@ def main():
         correct = dr.get_target_object(i)
         objects = dr.get_object_ids(i)
         bbox = dr.get_object_bbox(i)
-
-        print("1: " + str(len(objects)) + ", 2: " + str(len(bbox)))
 
         x = y = w = h = 0
         for j in range(len(objects)):
