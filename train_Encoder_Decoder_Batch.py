@@ -96,8 +96,8 @@ for epoch in range(iterations):
         decoder_epoch_loss_validation = torch.Tensor()
 
     # reshuffle training batches in every epoch
-    batches = create_batches(game_ids_train, batch_size, word2index['-PAD-'])
-    batches_val = create_batches(game_ids_val, len(game_ids_val), word2index['-PAD-'])
+    batches = create_batches(game_ids_train, batch_size)
+    batches_val = create_batches(game_ids_val, batch_size) # TODO: Do entire set later
 
     for batch in np.vstack([batches, batches_val]):
 
@@ -118,7 +118,7 @@ for epoch in range(iterations):
             visual_features_batch[i] = torch.Tensor(dr.get_image_features(gid))
 
 
-        
+        # create_batch_matrix(batch, dr, word2index, pad_token)
 
 
 
