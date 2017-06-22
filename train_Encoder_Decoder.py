@@ -3,6 +3,7 @@ from Models.Decoder import Decoder
 from Preprocessing.DataReader import DataReader
 
 import numpy as np
+from time import time
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -62,14 +63,16 @@ decoder_optimizer = optim.Adam(decoder_model.parameters(), decoder_lr)
 
 
 game_ids = dr.get_game_ids()
-game_ids = game_ids[648:648+10]
+game_ids = game_ids[:1500]
+
+
 
 # make training validation split
 game_ids_val = list(np.random.choice(game_ids, int(train_val_ratio*len(game_ids))))
 game_ids_train = [gid for gid in game_ids if gid not in game_ids_val]
 
 for epoch in range(iterations):
-
+    start = time()
     if use_cuda:
         decoder_epoch_loss = torch.cuda.FloatTensor()
         decoder_epoch_loss_validation = torch.cuda.FloatTensor()
@@ -170,8 +173,10 @@ for epoch in range(iterations):
                     if w_id == word2index['-EOS-']:
                         break
 
-                if epoch % 10 == 0:
-                    print(prod_q)
+
+                if epoch % 20 == 0 and gid in [3, 6, 10, 13, 17, 648]:
+                    with open('output.log', 'a') as out:
+                             out.write(prod_q + '\n')
 
             if gid in game_ids_train:
                 decoder_epoch_loss = torch.cat([decoder_epoch_loss, decoder_loss.data])
@@ -192,6 +197,6 @@ for epoch in range(iterations):
 
 
 
-    print("Epoch %03d, Training-Loss %.5f, Validation-Loss %.5f" %(epoch, torch.mean(decoder_epoch_loss), torch.mean(decoder_epoch_loss_validation)))
+    print("Epoch %03d, Time taken %.2f, Training-Loss %.5f, Validation-Loss %.5f" %(epoch, time()-start,torch.mean(decoder_epoch_loss), torch.mean(decoder_epoch_loss_validation)))
 
 print("Training completed.")
