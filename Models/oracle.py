@@ -1,6 +1,3 @@
-# Oracle for GuessWhat 
-# https://github.com/pytorch/pytorch/issues/619 
-
 import torch
 import torch.autograd as autograd
 import torch.nn as nn
@@ -11,7 +8,7 @@ import json
 import numpy
 import h5py
 
-class Oracle(nn.Module()):
+class Oracle(nn.Module):
 
     # hidden_dim: Dimensionality of output of LSTM block.
     # embedding_dim: (inputsize LSTM)
@@ -19,12 +16,14 @@ class Oracle(nn.Module()):
     # d_hin/d_hidden/d_hout: dimenties van hidden layer: 
     # --- helft van de dimensies die het verbind, recursively, voor gradual overgang.
     # d_out: 3 (Yes,No,N/A)
-    def __init__(self,vocab_size, embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out):
+    def __init__(self,vocab_size, embedding_dim,categories_length,object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out):
         # Dit weet ik allemaal niet zo goed meer: is dit nodig?
         super(Oracle, self).__init__()
         self.hidden_dim = hidden_dim
         self.vocab_size = vocab_size
-
+        self.object_embedding_dim = object_embedding_dim
+        self.object_embedding_model = nn.Embedding(self.categories_length, self.object_embedding_dim)
+        
         # Word Embeddings
         self.word_embeddings = nn.Embedding(vocab_size, embedding_dim)
 
@@ -65,7 +64,8 @@ class Oracle(nn.Module()):
         encoder_out = self.lstm(encoder_in, self.hidden)
 
         #Answer question
-        mlp_in = torch.cat([encoder_out, image, crop, spatial_info, object_class])
+        object_class = self.object_embedding_model(object_class)
+        mlp_in = torch.cat([image,crop,spatial_info,object_class,encoder_out])
 
         # MLP pass
         mlp_out = self.mlp(mlp_in) 
