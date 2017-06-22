@@ -63,14 +63,15 @@ def tokenize_data(data, word_count = False):
 
             # Append the tokenized question and answer (only one word) to the list of tokens
             tokenized_question = word_tokenize(question)
-            tokenized_question_preprocessed = ['-SOS-'] + [word.lower() for word in tokenized_question] + ['-EOS-']
+            tokenized_question_preprocessed = word_tokenize("-SOS-") + [word.lower() for word in tokenized_question] + word_tokenize("-EOS-")
+            # print(tokenized_question_preprocessed)
             question_tokens.append(tokenized_question_preprocessed)
             answer_tokens.append(answer)
 
             # Update the word count for every word in the question and answer
             # Only if we actually want this
             if word_count:
-                for word in tokenized_question:
+                for word in tokenized_question_preprocessed:
                     word_counts[word] = word_counts.get(word, 0) + 1
                 word_counts[answer] = word_counts.get(answer, 0) + 1 
 
