@@ -104,9 +104,6 @@ def create_batch_matrix(batch, dr, word2index, pad_token):
             encoder_batch_list[i].append(game_dialogue_ids)
             decoder_batch_list[i].append(question_dialogue_ids)
 
-    print('max ques', max_questions)
-    # print('encoder: ',encoder_batch_list)
-    # print('decoder: ',decoder_batch_list)
 
     encoder_questions_list = [[] for i in range(max_questions)]
     encoder_questions_maxlength = [[0] for i in range(max_questions)]
@@ -120,37 +117,18 @@ def create_batch_matrix(batch, dr, word2index, pad_token):
             else:
                 encoder_questions_list[i].append([])
 
-    print(encoder_questions_list)
-    print(encoder_questions_maxlength)
 
+    for i, (ql, mqlen) in enumerate(zip(encoder_questions_list, encoder_questions_maxlength)):
+        print(ql)
+        for j, q in enumerate(ql):
+            print(q)    
+            for _ in range(mqlen[0]-len(q)):
+                encoder_questions_list[i][j].append(pad_token)
 
-    max_enc_length = 0
-    max_dec_length = 0
+    
+    encoder_batch_matrix = torch.FloatTensor(encoder_questions_list)
+    # decoder_batch_matrix =     
 
-    for eb in encoder_batch_list:
-        if len(eb) > max_enc_length:
-            max_enc_length = len(eb)
-
-    for i, eb in enumerate(encoder_batch_list):
-        for _ in range(max_enc_length-len(eb)):
-            encoder_batch_list[i].append(pad_token)
-
-
-    for db in decoder_batch_list:
-        if len(db) > max_dec_length:
-            max_dec_length = len(db)
-
-    for i, db in enumerate(decoder_batch_list):
-        for _ in range(max_dec_length-len(db)):
-            decoder_batch_list[i].append(pad_token)
-
-    encoder_batch_matrix = np.asarray(encoder_batch_list)
-    decoder_batch_matrix = np.asarray(decoder_batch_list)
-
-    # print(word2index['-SOS-'])
-    # print(word2index['-PAD-'])
-    # print(encoder_batch_matrix)
-    # print(decoder_batch_matrix)
     return encoder_batch_matrix, decoder_batch_matrix
 
 
