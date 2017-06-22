@@ -77,3 +77,16 @@ class Encoder(nn.Module):
         encoder_out, self.hidden_encoder = self.encoder_lstm(sentence_embedding, self.hidden_encoder)
 
         return encoder_out, self.hidden_encoder
+
+
+class EncoderBatch(Encoder):
+    """docstring for E"""
+    def __init__(self, vocab_size, word_embedding_dim, hidden_encoder_dim, word2index):
+        # super(EncoderBatch, self).__init__()
+        Encoder.__init__(self,vocab_size, word_embedding_dim, hidden_encoder_dim, word2index)
+
+    def forward(self, sentence_batch):
+        """ freivn """
+        sentence_batch_embedding = self.word_embeddings(sentence_batch)
+        packed = torch.nn.utils.rnn.pack_padded_sequence(sentence_batch_embedding, input_lengths)
+        
