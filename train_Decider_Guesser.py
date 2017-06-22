@@ -12,29 +12,31 @@ from Models.Guesser import Guesser
 
 
 
-data_path               = "Preprocessing/Data/preprocessed.h5"
-indicies_path           = "Preprocessing/Data/indices.json"
+data_path               = "../ivd_data/preprocessed.h5"
+indicies_path           = "../ivd_data/indices.json"
 images_path             = "train2014"
-images_features_path    = "Preprocessing/Data/image_features.h5"
+images_features_path    = "../ivd_data/image_features.h5"
 
 dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_path=images_path, images_features_path=images_features_path)
-
+"""
 encoder_model = Encoder(*args, **kwargs)
 encoder_model.load_state_dict(torch.load(PATH))  # TODO: Add the path
 
 decoder_model = Decoder(*args, **kwargs)
 decoder_model.load_state_dict(torch.load(PATH))  # TODO: Add the path
-
+"""
 # Load Oracle model to play the game
 
 ##Hyperparameters
 
 # Decider
-hidden_encoder_dim = encoder_model.hidden_encoder_dim
+#hidden_encoder_dim 	= encoder_model.hidden_encoder_dim
+hidden_encoder_dim 		= 128
 
 # Guesser
-categories_length = dr.get_categories_length()
-cat2id = dr.get_cat2id()
+categories_length 		= dr.get_categories_length()
+cat2id 					= dr.get_cat2id()
+object_embedding_dim 	= 20
 
 # Decoder
 max_length              = dr.get_question_max_length()
@@ -45,7 +47,7 @@ decider_lr              = 0.0001
 guesser_lr              = 0.0001
 
 decider_model = Decider(hidden_encoder_dim)
-guesser_model = Guesser(hidden_encoder_dim, categories_length, cat2id)
+guesser_model = Guesser(hidden_encoder_dim, categories_length, cat2id, object_embedding_dim)
 
 decider_loss_function = nn.MSELoss()
 guesser_loss_function = nn.NLLLoss()

@@ -44,21 +44,31 @@ class Guesser(nn.Module):
 
         width           = img_meta[1]
         height          = img_meta[2]
+
         image_center_x  = width / 2
         image_center_y  = height / 2
 
         spatial = Variable(torch.FloatTensor(len(bboxes), 8))
 
         for i, bbox in enumerate(bboxes):
-            x_min = (min(bbox[0], bbox[2]) - image_center_x) / image_center_x
-            y_min = (min(bbox[1], bbox[3]) - image_center_y) / image_center_y
-            x_max = (max(bbox[0], bbox[2]) - image_center_x) / image_center_x
-            y_max = (max(bbox[1], bbox[3]) - image_center_y) / image_center_y
-            x_center = (x_min + x_max) / 2
-            y_center = (y_min + y_max) / 2
+            x_min = bbox[0] / width
+            y_min = bbox[1] / height
+            x_max = (bbox[0] + bbox[2]) / width
+            y_max = (bbox[1] + bbox[3]) / height
+
 
             w_box = x_max - x_min
             h_box = y_max - y_min
+
+            x_min = x_min * 2 - 1
+            y_min = y_min * 2 - 1
+            x_max = x_max * 2 - 1
+            y_max = y_max * 2 - 1
+
+
+            x_center = (x_min + x_max) / 2
+            y_center = (y_min + y_max) / 2
+
 
             spatial[i] = torch.FloatTensor([x_min, y_min, x_max, y_max, x_center, y_center, w_box, h_box])
 
@@ -82,6 +92,6 @@ class Guesser(nn.Module):
 
         hidden_encoder = torch.cat([hidden_encoder[0]] * len(object_categories))
 
-        
+
 
         return F.log_softmax(torch.mm(proposed_embeddings, hidden_encoder[0].view(self.hidden_encoder_dim, -1)).t())

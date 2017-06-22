@@ -43,7 +43,7 @@ tf_decay_mode           = 'one-by-epoch-squared'
 train_val_ratio         = 0.2
 
 def get_teacher_forcing_p(epoch):
-    """ return the probability of appyling teacher forcing"""
+    """ return the probability of appyling teacher forcing at a given epoch """
     epoch += 1
     if tf_decay_mode == 'one-by-epoch': return 1/epoch
     if tf_decay_mode == 'one-by-epoch-squared': return 1/(epoch**2)
