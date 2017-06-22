@@ -3,7 +3,7 @@ import h5py
 
 class DataReader():
 
-    def __init__(self, data_path, indicies_path, images_path, images_features_path):
+    def __init__(self, data_path, indicies_path, images_path, images_features_path, crop_features_path = ''):
 
         # save image path in DataReader Object
         self.images_path = images_path
@@ -33,6 +33,12 @@ class DataReader():
         self.image_features_data = h5py.File(images_features_path, 'r')
         self.all_img_ids        = self.image_features_data['all_img_ids']
         self.all_img_features   = self.image_features_data['all_img_features']
+
+        # create crop_features file
+        if len(crop_features_path) > 0:
+            self.crop_features_data = h5py.File(crop_features_path, 'r')
+            self.all_img_ids_crop        = self.crop_features_data['all_img_ids']
+            self.all_img_features_crop   = self.crop_features_data['all_img_features']
 
 
 
@@ -98,6 +104,10 @@ class DataReader():
         image_id = self.get_image_id(game_id)
         feature_id = list(self.all_img_ids).index(image_id)
         return self.all_img_features[feature_id]
+
+    def get_crop_features(self, game_id):
+        """ given a game id, return the features of the crop for that game """
+        return self.all_img_features_crop[game_id]
 
 
     def get_questions(self, game_id):
