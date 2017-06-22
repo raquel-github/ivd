@@ -49,7 +49,7 @@ teacher_forcing         = True # if TRUE, the decoder input will always be the g
 tf_decay_mode           = 'one-by-epoch-squared'
 train_val_ratio         = 0.2
 save_models             = True
-n_games_to_train        = 5
+n_games_to_train        = 500
 
 
 # save hyperparameters in a file
@@ -190,6 +190,11 @@ for epoch in range(iterations):
                     if w_id == word2index['-EOS-']:
                         break
 
+                # write output log at every epoch after each question
+                if gid in game_ids_train[:3] + game_ids_val[:1]:
+                    with open(output_file, 'a') as out:
+                        out.write("%03d, %i, %i, %s\n" %(epoch, gid, qid, prod_q))
+
 
             if gid in game_ids_train:
                 decoder_epoch_loss = torch.cat([decoder_epoch_loss, decoder_loss.data])
@@ -211,10 +216,6 @@ for epoch in range(iterations):
 
 
     print("Epoch %03d, Time taken %.2f, Training-Loss %.5f, Validation-Loss %.5f" %(epoch, time()-start,torch.mean(decoder_epoch_loss), torch.mean(decoder_epoch_loss_validation)))
-
-    # write output log at every epoch
-    with open(output_file, 'a') as out:
-        out.write("%03d, %i, %i, %s\n" %(epoch, gid, qid, prod_q))
 
     # write loss
     with open(loss_file, 'a') as out:
