@@ -28,6 +28,8 @@ class Oracle(nn.Module):
         self.embedding_dim = embedding_dim
         self.object_embedding_dim = object_embedding_dim
         self.word2index = word2index
+
+        # Object Embeddings
         self.object_embedding_model = nn.Embedding(categories_length, object_embedding_dim)
         
         # Word Embeddings
@@ -50,6 +52,9 @@ class Oracle(nn.Module):
     def word2embedd(self, w):
         return self.word_embeddings(Variable(torch.LongTensor([self.word2index[w]])))
 
+    def obj2embedd(self,obj):
+        return self.object_embedding_model(Variable(torch.LongTensor([int(obj)]) ))
+
     def init_hidden(self):
         if use_cuda:
             return (autograd.Variable(torch.zeros(1, 1, self.hidden_dim)).cuda(),
@@ -58,7 +63,7 @@ class Oracle(nn.Module):
             return (autograd.Variable(torch.zeros(1, 1, self.hidden_dim)),
                     autograd.Variable(torch.zeros(1, 1, self.hidden_dim)))
 
-    def forward(self, question, spatial_info, object_class, crop, image, training=True):
+    def forward(self, question, spatial, object_class, crop, image, training=True):
         # Compute representation of the sentence
         sentence_embedding = Variable(torch.zeros(len(question.split()), self.embedding_dim))
         for i, w in enumerate(question.split()):
@@ -69,13 +74,17 @@ class Oracle(nn.Module):
         
         # LSTM pass
         hidden = self.init_hidden() 
-        encoder_out = self.lstm(encoder_in, hidden)
+        _ , hidden  = self.lstm(encoder_in, hidden)
 
-        # print(self.object_embedding_model)
+        # Format data
+        object_class = self.obj2embedd(object_class)
+        image = image.view(1, -1)
+        crop = crop.view(1, -1)
+        spatial = spatial.view(1,-1)
+        hidden_lstm = hidden[0].view(1,-1)
 
-        #Answer question
-        # object_class = self.object_embedding_model(autograd.Variable(torch.LongTensor(int(object_class))))
-        mlp_in = Variable(torch.cat([image, crop, spatial_info, torch.FloatTensor(int(object_class)), encoder_out]))
+        #Get answer
+        mlp_in = Variable(torch.cat([image, crop, spatial.data, object_class.data, hidden_lstm.data],dim=1))
 
         # MLP pass
         mlp_out = self.mlp(mlp_in) 
