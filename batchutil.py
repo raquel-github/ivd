@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from torch.autograd import Variable
 
 def create_batches(game_ids_train, batch_size):
     """ returns game batches with from gloabl varibale batch size"""
@@ -84,8 +85,11 @@ def create_batch_matrix(batch, dr, word2index, pad_token):
 
 
 
-    encoder_batch_matrix = [torch.FloatTensor(enc_q) for enc_q in encoder_questions_list]
-    decoder_batch_matrix = [torch.FloatTensor(dec_q) for dec_q in decoder_questions_list]
+    encoder_batch_matrix = [Variable(torch.LongTensor(enc_q)) for enc_q in encoder_questions_list]
+    decoder_batch_matrix = [Variable(torch.LongTensor(dec_q)) for dec_q in decoder_questions_list]
+
+    print(encoder_batch_matrix)
+    print(decoder_batch_matrix)
 
     return encoder_batch_matrix, decoder_batch_matrix
 
