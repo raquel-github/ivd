@@ -11,10 +11,10 @@ from torch.autograd import Variable
 
 use_cuda = torch.cuda.is_available()
 
-data_path               = "../data/preprocessed.h5"
-indicies_path           = "../data/indices.json"
+data_path               = "../ivd_data/preprocessed.h5"
+indicies_path           = "../ivd_data/indices.json"
 images_path             = "train2014"
-images_features_path    = "../data/image_features.h5"
+images_features_path    = "../ivd_data/image_features.h5"
 
 dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_path=images_path, images_features_path=images_features_path)
 
@@ -34,11 +34,11 @@ visual_features_dim     = 4096
 
 # Training
 iterations              = 100
-encoder_lr              = 0.0001
-decoder_lr              = 0.0001
+encoder_lr              = 0.001
+decoder_lr              = 0.005
 grad_clip               = 5.
-teacher_forcing         = True # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
-tf_decay_mode           = 'one-by-epoch'
+teacher_forcing         = False # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
+tf_decay_mode           = 'one-by-epoch-squared'
 train_val_ratio         = 0.2
 
 def get_teacher_forcing_p(epoch):
@@ -83,8 +83,6 @@ for epoch in range(iterations):
         if dr.get_success(gid) == 0:
             continue
 
-        #print("Processing game", gid)
-
         decoder_loss = 0
         decoder_loss_validation = 0
 
@@ -120,11 +118,11 @@ for epoch in range(iterations):
                 # get decoder target
                 question_length = len(q.split())
                 if use_cuda:
-                    decoder_targets = Variable(torch.LongTensor(question_length)).cuda() # TODO add -1 when -EOS- is avail.
+                    decoder_targets = Variable(torch.LongTensor(question_length-1)).cuda() # subtract -1 to bc -SOS- is no target
                 else:
-                    decoder_targets = Variable(torch.LongTensor(question_length)) # TODO add -1 when -EOS- is avail.
+                    decoder_targets = Variable(torch.LongTensor(question_length-1))
 
-                for qwi, qw in enumerate(q.split()): # TODO add [1:] slice when -SOS- is avail.
+                for qwi, qw in enumerate(q.split()[1:]): # slicing [1:] to not add -SOS- to targets
                     decoder_targets[qwi] = word2index[qw]
 
                 """
@@ -137,8 +135,8 @@ for epoch in range(iterations):
                 """
 
                 # get produced question by decoder
-                for qwi in range(question_length-1):
-                    # go as long as target or until ?/-EOS- token
+                for qwi in range(question_length-2):
+                    # go as long as target or until -EOS- token
 
                     # pass through decoder
                     if qwi == 0:
@@ -169,7 +167,7 @@ for epoch in range(iterations):
                     else:
                         decoder_loss_validation += decoder_loss_function(pw, decoder_targets[qwi])
 
-                    if w_id == word2index['?']: # TODO change to -EOS- once avail.
+                    if w_id == word2index['-EOS-']:
                         break
 
                 if epoch % 10 == 0:
@@ -194,6 +192,6 @@ for epoch in range(iterations):
 
 
 
-    print("Epoch %i, Training-Loss %f, Validation-Loss %f" %(epoch, torch.mean(decoder_epoch_loss), torch.mean(decoder_epoch_loss_validation)))
+    print("Epoch %03d, Training-Loss %.5f, Validation-Loss %.5f" %(epoch, torch.mean(decoder_epoch_loss), torch.mean(decoder_epoch_loss_validation)))
 
 print("Training completed.")
