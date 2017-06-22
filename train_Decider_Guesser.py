@@ -25,7 +25,7 @@ encoder_model.load_state_dict(torch.load(PATH))  # TODO: Add the path
 decoder_model = Decoder(*args, **kwargs)
 decoder_model.load_state_dict(torch.load(PATH))  # TODO: Add the path
 
-# Load Oracle model to play the game 
+# Load Oracle model to play the game
 
 ##Hyperparameters
 
@@ -98,7 +98,7 @@ for epoch in range(iterations):
 
 	    # Data required for the guesser
 	    img_meta 			= dr.get_image_meta(gid)
-	    object_categories 	=  dr.get_category_id(gid)
+	    object_categories 	= dr.get_category_id(gid)
 	    object_ids 			= dr.get_object_ids(gid)
 	    # get guesser target object
 	    correct_obj_id  	= dr.get_correct_object_id(gid)
@@ -122,7 +122,3 @@ for epoch in range(iterations):
 
     	guesser_epoch_loss = torch.cat([guesser_epoch_loss, guesser_loss.data])
     	decider_epoch_loss = torch.cat([decider_epoch_loss, decider_loss.data])
-
-
-
-
