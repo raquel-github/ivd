@@ -29,7 +29,7 @@ class Encoder(nn.Module):
         self.hidden_encoder_dim = hidden_encoder_dim
 
         # Word embedding Training Model
-        if use_cuda: 
+        if use_cuda:
             self.word_embeddings = nn.Embedding(vocab_size, word_embedding_dim).cuda()
         else:
             self.word_embeddings = nn.Embedding(vocab_size, word_embedding_dim)
@@ -68,10 +68,7 @@ class Encoder(nn.Module):
             sentence_embedding = Variable(torch.zeros(len(sentence.split()), self.word_embedding_dim))
 
         for i, w in enumerate(sentence.split()):
-            if w == '-SOS-':
-                sentence_embedding[i] = self.sos
-            else:
-                sentence_embedding[i] = self.word2embedd(w)
+            sentence_embedding[i] = self.word2embedd(w)
 
 
         sentence_embedding = sentence_embedding.view(len(sentence.split()),1,-1)
@@ -79,5 +76,4 @@ class Encoder(nn.Module):
         # pass word embeddings through encoder LSTM and get output and hidden state
         encoder_out, self.hidden_encoder = self.encoder_lstm(sentence_embedding, self.hidden_encoder)
 
-        # print('Encoder Done')
         return encoder_out, self.hidden_encoder
