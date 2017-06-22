@@ -191,9 +191,9 @@ for epoch in range(iterations):
                         break
 
                 # write output log at every epoch after each question
-                if gid in game_ids_train[:3] + game_ids_val[:1]:
+                if gid in game_ids_train[::50] + game_ids_val[:25]:
                     with open(output_file, 'a') as out:
-                        out.write("%03d, %i, %i, %s\n" %(epoch, gid, qid, prod_q))
+                        out.write("%03d, %i, %i, %i, %s\n" %(epoch, gid, qid, gid in game_ids_train[::50], prod_q))
 
 
             if gid in game_ids_train:
