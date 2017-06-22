@@ -36,7 +36,7 @@ class DataReader():
 
         # create crop_features file
         if len(crop_features_path) > 0:
-            self.crop_features_data = h5py.File(crop_features_path, 'r')
+            self.crop_features_data = h5py.File(images_features_path, 'r') #TODO: change back to crops.
             self.all_img_ids_crop        = self.crop_features_data['all_img_ids']
             self.all_img_features_crop   = self.crop_features_data['all_img_features']
 
