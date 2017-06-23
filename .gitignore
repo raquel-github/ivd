@@ -52,3 +52,7 @@ Preprocessing/Data/preprocessed.h5
 Preprocessing/Data/indices.json
 
 Preprocessing/Data/preprocessed.h5
+
+logs/*
+
+Models/bin/*

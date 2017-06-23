@@ -118,7 +118,7 @@ for epoch in range(iterations):
             visual_features_batch[i] = torch.Tensor(dr.get_image_features(gid))
 
 
-        # create_batch_matrix(batch, dr, word2index, pad_token)
+        encoder_batch_matrix, decoder_batch_matrix = create_batch_matrix(batch, dr, word2index,  word2index['-PAD-'])
 
 
 

@@ -4,6 +4,8 @@ from Preprocessing.DataReader import DataReader
 
 import numpy as np
 from time import time
+import datetime
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -16,7 +18,10 @@ data_path               = "../ivd_data/preprocessed.h5"
 indicies_path           = "../ivd_data/indices.json"
 images_path             = "train2014"
 images_features_path    = "../ivd_data/image_features.h5"
-
+ts                      = str(datetime.datetime.fromtimestamp(time()).strftime('%Y%m%d%H%M'))
+output_file             = "logs/output" + ts + ".log"
+loss_file               = "logs/loss" + ts + ".log"
+hyperparameters_file    = "logs/hyperparameters" + ts + ".log"
 dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_path=images_path, images_features_path=images_features_path)
 
 
@@ -36,14 +41,32 @@ visual_features_dim     = 4096
 decoder_model_path      = 'Models/bin/dec'
 
 # Training
-iterations              = 100
+iterations              = 1000
 encoder_lr              = 0.0001
 decoder_lr              = 0.0005
 grad_clip               = 5.
 teacher_forcing         = True # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
 tf_decay_mode           = 'one-by-epoch-squared'
 train_val_ratio         = 0.2
-save_models             = False
+save_models             = True
+n_games_to_train        = 500
+
+
+# save hyperparameters in a file
+with open(hyperparameters_file, 'a') as hyp:
+    hyp.write("word_embedding_dim %i \n" %(word_embedding_dim))
+    hyp.write("hidden_encoder_dim %i \n" %(hidden_encoder_dim))
+    hyp.write("hidden_decoder_dim %i \n" %(hidden_decoder_dim))
+    hyp.write("visual_features_dim %i \n" %(visual_features_dim))
+    hyp.write("iterations %i \n" %(iterations))
+    hyp.write("encoder_lr %f \n" %(encoder_lr))
+    hyp.write("decoder_lr %f \n" %(decoder_lr))
+    hyp.write("grad_clip %f \n" %(grad_clip))
+    hyp.write("teacher_forcing %i \n" %(teacher_forcing))
+    hyp.write("tf_decay_mode %s \n" %(tf_decay_mode))
+    hyp.write("train_val_ratio %f \n" %(train_val_ratio))
+    hyp.write("n_games_to_train %i \n" %(n_games_to_train))
+
 
 def get_teacher_forcing_p(epoch):
     """ return the probability of appyling teacher forcing at a given epoch """
@@ -65,9 +88,13 @@ encoder_optimizer = optim.Adam(encoder_model.parameters(), encoder_lr)
 decoder_optimizer = optim.Adam(decoder_model.parameters(), decoder_lr)
 
 
-game_ids = dr.get_game_ids()
-game_ids = game_ids[:10]
-
+_game_ids = dr.get_game_ids()
+game_ids = list()
+# get only successful games
+while len(game_ids) < n_games_to_train:
+    candidate = np.random.choice(_game_ids)
+    if dr.get_success(candidate) == 1 and candidate not in game_ids:
+        game_ids.append(candidate)
 
 
 # make training validation split
@@ -84,10 +111,6 @@ for epoch in range(iterations):
         decoder_epoch_loss_validation = torch.Tensor()
 
     for gid in game_ids_train+game_ids_val:
-
-        # check for successful training instance, else skip
-        if dr.get_success(gid) == 0:
-            continue
 
         decoder_loss = 0
         decoder_loss_validation = 0
@@ -131,17 +154,8 @@ for epoch in range(iterations):
                 for qwi, qw in enumerate(q.split()[1:]): # slicing [1:] to not add -SOS- to targets
                     decoder_targets[qwi] = word2index[qw]
 
-                """
-                print(q)
-                t = str()
-                for tid in range(question_length):
-                    t += index2word[str(decoder_targets[tid].data[0])]
-
-                print(t)
-                """
-
                 # get produced question by decoder
-                for qwi in range(question_length-2):
+                for qwi in range(question_length-1):
                     # go as long as target or until -EOS- token
 
                     # pass through decoder
@@ -176,15 +190,11 @@ for epoch in range(iterations):
                     if w_id == word2index['-EOS-']:
                         break
 
-                """
-                if epoch % 20 == 0 and gid in [3, 6, 10, 13, 17, 648]:
-                    with open('output.log', 'a') as out:
-                             out.write(prod_q + '\n')
-                """
-                if epoch % 10 == 0:
-                    with open('output_tim.log', 'a') as out:
-                             out.write("%03d, %i, %i, %s\n" %(epoch, gid, qid, prod_q))
-                    #print(gid, prod_q)
+                # write output log at every epoch after each question
+                if gid in game_ids_train[::50] + game_ids_val[:25]:
+                    with open(output_file, 'a') as out:
+                        out.write("%03d, %i, %i, %i, %s\n" %(epoch, gid, qid, gid in game_ids_train[::50], prod_q))
+
 
             if gid in game_ids_train:
                 decoder_epoch_loss = torch.cat([decoder_epoch_loss, decoder_loss.data])
@@ -206,6 +216,15 @@ for epoch in range(iterations):
 
 
     print("Epoch %03d, Time taken %.2f, Training-Loss %.5f, Validation-Loss %.5f" %(epoch, time()-start,torch.mean(decoder_epoch_loss), torch.mean(decoder_epoch_loss_validation)))
+
+    # write loss
+    with open(loss_file, 'a') as out:
+        out.write("%f, %f \n" %(torch.mean(decoder_epoch_loss), torch.mean(decoder_epoch_loss_validation)))
+
+    # save models
+    if save_models:
+        torch.save(encoder_model.state_dict(), encoder_model_path+str(epoch)+ts)
+        torch.save(decoder_model.state_dict(), decoder_model_path+str(epoch)+ts)
 
 print("Training completed.")
 
