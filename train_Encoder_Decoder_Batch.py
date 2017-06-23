@@ -1,5 +1,5 @@
-from Models.Encoder import Encoder
-from Models.Decoder import Decoder
+from Models.Encoder import EncoderBatch as Encoder
+from Models.Decoder import DecoderBatch as Decoder
 from Preprocessing.DataReader import DataReader
 from batchutil import create_batch_matrix, create_batches
 
@@ -27,16 +27,14 @@ dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_path=im
 
 # Encoder
 word2index              = dr.get_word2ind()
-word2index['-PAD-']     = len(word2index)
 vocab_size              = len(word2index)
-word_embedding_dim      = 128
-hidden_encoder_dim      = 128
+word_embedding_dim      = 512
+hidden_encoder_dim      = 512
 encoder_model_path      = 'Models/bin/enc'
 
 # Decoder
-hidden_decoder_dim      = 128
+hidden_decoder_dim      = 512
 index2word              = dr.get_ind2word()
-index2word[word2index['-PAD-']] = '-PAD-'
 visual_features_dim     = 4096
 decoder_model_path      = 'Models/bin/dec'
 
@@ -47,7 +45,7 @@ decoder_lr              = 0.005
 grad_clip               = 5.
 teacher_forcing         = False # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
 tf_decay_mode           = 'one-by-epoch-squared'
-train_val_ratio         = 0.2
+train_val_ratio         = 0.1
 save_models             = False
 batch_size              = 5
 n_games_to_train        = 50
@@ -59,7 +57,7 @@ def get_teacher_forcing_p(epoch):
     if tf_decay_mode == 'one-by-epoch-squared': return 1/(epoch**2)
 
 
-encoder_model = Encoder(vocab_size, word_embedding_dim, hidden_encoder_dim, word2index)
+encoder_model = Encoder(vocab_size, word_embedding_dim, hidden_encoder_dim, word2index, batch_size)
 decoder_model = Decoder(word_embedding_dim, hidden_decoder_dim, visual_features_dim, vocab_size)
 
 if use_cuda:
@@ -120,6 +118,18 @@ for epoch in range(iterations):
 
         encoder_batch_matrix, decoder_batch_matrix = create_batch_matrix(batch, dr, word2index,  word2index['-PAD-'])
 
+        print("Encoder batch matrix 0", encoder_batch_matrix[0].size())
+
+        encoder_out, encoder_hidden_state = encoder_model(encoder_batch_matrix[0])
+
+        print("Encoder out", encoder_out.size())
+        print("Encoder hidden", encoder_hidden_state[0].size())
+
+        print("Decoder batch matrix 0", decoder_batch_matrix[0].size())
+        print("Visual features batch 0", visual_features_batch[0].size())
+
+
+        pw = decoder_model(visual_features_batch[0], encoder_hidden_state[0], torch.cat([encoder_model.sos]*batch_size))
 
 
         for qid, q in enumerate(questions):
@@ -146,15 +156,6 @@ for epoch in range(iterations):
 
                 for qwi, qw in enumerate(q.split()[1:]): # slicing [1:] to not add -SOS- to targets
                     decoder_targets[qwi] = word2index[qw]
-
-                """
-                print(q)
-                t = str()
-                for tid in range(question_length):
-                    t += index2word[str(decoder_targets[tid].data[0])]
-
-                print(t)
-                """
 
                 # get produced question by decoder
                 for qwi in range(question_length-2):

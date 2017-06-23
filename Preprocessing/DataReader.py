@@ -9,7 +9,7 @@ class DataReader():
         self.images_path = images_path
 
         # read indicies json file with indicies
-        self.indicies = json.load(open(indicies_path))
+        self.indicies               = json.load(open(indicies_path))
         self.ind2word               = self.indicies['ind2word']
         self.word2ind               = self.indicies['word2ind']
         self.img_metadata           = self.indicies['img_metadata_training']

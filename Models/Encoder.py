@@ -9,7 +9,7 @@ use_cuda = torch.cuda.is_available()
 
 class Encoder(nn.Module):
 
-    def __init__(self, vocab_size, word_embedding_dim, hidden_encoder_dim, word2index):
+    def __init__(self, vocab_size, word_embedding_dim, hidden_encoder_dim, word2index, batch_size=1):
         """
         Parameters
         vocab_size              Size of the vocablurary
@@ -27,6 +27,7 @@ class Encoder(nn.Module):
         self.hidden_word_embed_layer = int(vocab_size / 2)
         self.word2index = word2index
         self.hidden_encoder_dim = hidden_encoder_dim
+        self.batch_size = batch_size
 
         # Word embedding Training Model
         if use_cuda:
@@ -47,11 +48,11 @@ class Encoder(nn.Module):
 
     def init_hidden(self):
         if use_cuda:
-            return (autograd.Variable(torch.zeros(1, 1, self.hidden_encoder_dim)).cuda(),
-                    autograd.Variable(torch.zeros(1, 1, self.hidden_encoder_dim)).cuda())
+            return (autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim)).cuda(),
+                    autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim)).cuda())
         else:
-            return (autograd.Variable(torch.zeros(1, 1, self.hidden_encoder_dim)),
-                    autograd.Variable(torch.zeros(1, 1, self.hidden_encoder_dim)))
+            return (autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim)),
+                    autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim)))
 
     def word2embedd(self, w):
         if use_cuda:
@@ -81,12 +82,17 @@ class Encoder(nn.Module):
 
 class EncoderBatch(Encoder):
     """docstring for E"""
-    def __init__(self, vocab_size, word_embedding_dim, hidden_encoder_dim, word2index):
+    def __init__(self, vocab_size, word_embedding_dim, hidden_encoder_dim, word2index, batch_size):
         # super(EncoderBatch, self).__init__()
-        Encoder.__init__(self,vocab_size, word_embedding_dim, hidden_encoder_dim, word2index)
+        Encoder.__init__(self,vocab_size, word_embedding_dim, hidden_encoder_dim, word2index, batch_size)
+
 
     def forward(self, sentence_batch):
         """ freivn """
         sentence_batch_embedding = self.word_embeddings(sentence_batch)
-        packed = torch.nn.utils.rnn.pack_padded_sequence(sentence_batch_embedding, input_lengths)
-        
+        print(sentence_batch_embedding.size())
+        print(self.hidden_encoder[0].size())
+        #packed = torch.nn.utils.rnn.pack_padded_sequence(sentence_batch_embedding, input_lengths)
+        encoder_out, self.hidden_encoder = self.encoder_lstm(sentence_batch_embedding, self.hidden_encoder)
+
+        return encoder_out, self.hidden_encoder
