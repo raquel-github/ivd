@@ -48,7 +48,7 @@ def img_spatial(img_meta):
         return spatial
 
 def train():
-    max_iter = 10
+    max_iter = 10 
 
     # Load data
     data_path               = "Preprocessing/Data/preprocessed.h5"
@@ -84,7 +84,7 @@ def train():
     optimizer = optim.Adam(model.parameters(), lr=0.00001)
 
     #Get Game/Question and run model
-    gameids = 10#dr.get_game_ids()
+    gameids = range(10)#dr.get_game_ids()
     for epoch in range(max_iter):
         start = time()
         oracle_epoch_loss = torch.Tensor()
@@ -111,7 +111,7 @@ def train():
 
                 answer = Variable(torch.LongTensor([ans2id[answers[qi]]]))
                 cost = loss(outputs,answer)
-                oracle_epoch_loss = torch.cat([oracle_epoch_loss,cost.data) ])
+                oracle_epoch_loss = torch.cat([oracle_epoch_loss,cost.data])
     
                 # Backpropogate Errors 
                 optimizer.zero_grad() 
