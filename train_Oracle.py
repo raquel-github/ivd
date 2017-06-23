@@ -10,6 +10,7 @@ from torch.autograd import Variable
 
 import numpy
 import h5py
+from time import time
 
 from Models.oracle import Oracle
 from Preprocessing.DataReader import DataReader
@@ -83,8 +84,11 @@ def train():
     optimizer = optim.Adam(model.parameters(), lr=0.00001)
 
     #Get Game/Question and run model
-    gameids = dr.get_game_ids()
+    gameids = 10#dr.get_game_ids()
     for epoch in range(max_iter):
+        start = time()
+        oracle_epoch_loss = torch.Tensor()
+        
         print("Epoch number %d" % (epoch))
         for gid in gameids:
             image = torch.Tensor(dr.get_image_features(gid))
@@ -107,12 +111,12 @@ def train():
 
                 answer = Variable(torch.LongTensor([ans2id[answers[qi]]]))
                 cost = loss(outputs,answer)
-                print(cost.data[0])
+                oracle_epoch_loss = torch.cat([oracle_epoch_loss,cost.data) ])
     
                 # Backpropogate Errors 
                 optimizer.zero_grad() 
                 cost.backward()
                 optimizer.step()
-
+        print("time:" + str(time()-start) + " \n Loss:" + str(torch.mean(oracle_epoch_loss)))
 if __name__ == '__main__':
     train()
