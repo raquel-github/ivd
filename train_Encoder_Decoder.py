@@ -22,6 +22,7 @@ ts                      = str(datetime.datetime.fromtimestamp(time()).strftime('
 output_file             = "logs/output" + ts + ".log"
 loss_file               = "logs/loss" + ts + ".log"
 hyperparameters_file    = "logs/hyperparameters" + ts + ".log"
+
 dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_path=images_path, images_features_path=images_features_path)
 
 
@@ -84,8 +85,12 @@ if use_cuda:
 
 decoder_loss_function = nn.NLLLoss()
 
-encoder_optimizer = optim.Adam(encoder_model.parameters(), encoder_lr)
-decoder_optimizer = optim.Adam(decoder_model.parameters(), decoder_lr)
+#encoder_optimizer = optim.Adam(encoder_model.parameters(), encoder_lr)
+encoder_optimizer = optim.RMSprop(encoder_model.parameters(), lr=encoder_lr, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0.5, centered=False)
+#decoder_optimizer = optim.Adam(decoder_model.parameters(), decoder_lr)
+decoder_optimizer = optim.RMSprop(decoder_model.parameters(), lr=decoder_lr, alpha=0.99, eps=1e-08, weight_decay=0, momentum=0.5, centered=False)
+
+
 
 
 _game_ids = dr.get_game_ids()
@@ -191,7 +196,7 @@ for epoch in range(iterations):
                         break
 
                 # write output log at every epoch after each question
-                if gid in game_ids_train[::50] + game_ids_val[:25]:
+                if gid in game_ids_train[::50] + game_ids_val[::25]:
                     with open(output_file, 'a') as out:
                         out.write("%03d, %i, %i, %i, %s\n" %(epoch, gid, qid, gid in game_ids_train[::50], prod_q))
 

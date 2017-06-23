@@ -153,7 +153,7 @@ class DataReader():
     def get_object_bboxes(self, game_id):
         """ given a game id, returns the bounding boxes of all objects in the same order as get_object_ids """
         bbox = self.objects_bbox_training[game_id]
-        bbox = [list(b) for b in bbox if b.all() != 0]
+        bbox = [list(b) for b in bbox if b.any() != 0]
 
         return bbox
 
