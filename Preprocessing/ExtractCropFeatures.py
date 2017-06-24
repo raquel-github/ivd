@@ -25,8 +25,10 @@ game_ids = dr.get_game_ids()
 all_img_features    = np.zeros((len(game_ids), 4096))
 all_img_ids         = np.zeros((len(game_ids)))
 
+log = open("log_david_crops", 'w')
+
 for i, gid in enumerate(game_ids):
-    print(i)
+    log.write("Image %d of %d\n" % (i, len(game_ids)))
 
     img_path = images_path + '/' + str(i) + '.jpg'
 
@@ -40,12 +42,14 @@ for i, gid in enumerate(game_ids):
     # print("Features\n",img_features.data.numpy())
     all_img_features[i] = img_features.data.numpy()
 
-    if i > 50:
+    if i > 3:
         break
 
 file = h5py.File('Data/image_features_crops.h5', 'w')
-print(len(all_img_features))
 file.create_dataset('all_img_features', dtype='float32', data=all_img_features)
 file.create_dataset('all_img_ids', dtype='uint32', data=all_img_ids)
 
-print("Time taken: ", time()-start)
+log.write("%d\n" % len(all_img_features))
+log.write("Time taken: %d\n" % time()-start)
+
+log.close()
