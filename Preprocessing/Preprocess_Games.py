@@ -67,20 +67,25 @@ def create_batch_from_games(dr, game_ids, pad_token, encoder_game_path, decoder_
                 max_n_questions = gameid2matrix_encoder[gid].size()[0]
 
 
-    encoder_batch = [Variable(torch.ones(len(game_ids), length+1) * pad_token) * max_n_questions]
-    decoder_batch = [Variable(torch.ones(len(game_ids), length)   * pad_token) * max_n_questions]
+    encoder_batch = [Variable(torch.ones(len(game_ids), length+1) * pad_token)] * max_n_questions
+    decoder_batch = [Variable(torch.ones(len(game_ids), length)   * pad_token)] * max_n_questions
+
+    print(gameid2matrix_encoder[game_ids[0]])
+    print(gameid2matrix_encoder[game_ids[1]])
+    print(gameid2matrix_encoder[game_ids[2]])
 
     for i in range(max_n_questions):
         for j, gid in enumerate(game_ids):
-
             if len(gameid2matrix_encoder[gid]) > i :
                 encoder_batch[i][j] = gameid2matrix_encoder[gid][i]
-
-            print(encoder_batch)
             
             if len(gameid2matrix_decoder[gid]) > i:
                 decoder_batch[i][j] = gameid2matrix_decoder[gid][i]
+        print("iter: ",i)
+        print("max_length: ", max_n_questions)
+        print(encoder_batch)
 
+    # print(encoder_batch)
     return encoder_batch, decoder_batch
 
 
@@ -108,8 +113,8 @@ for gid in game_ids:
 
 pickle.dump(gameid2matrix_encoder, open('gameid2matrix_encoder.p','wb'))
 pickle.dump(gameid2matrix_decoder, open('gameid2matrix_decoder.p','wb'))
-
 """
+
 gameid2matrix_encoder = pickle.load(open('../ivd_data/gameid2matrix_encoder.p','rb'))
 gameid2matrix_decoder = pickle.load(open('../ivd_data/gameid2matrix_decoder.p','rb'))
 
