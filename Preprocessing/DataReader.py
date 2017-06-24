@@ -3,36 +3,39 @@ import h5py
 
 class DataReader():
 
-    def __init__(self, data_path, indicies_path, images_path, images_features_path, crop_features_path = ''):
+    def __init__(self, data_path = '', indicies_path = '', images_path = '', images_features_path = '', crop_features_path = ''):
 
         # save image path in DataReader Object
         self.images_path = images_path
 
         # read indicies json file with indicies
-        self.indicies               = json.load(open(indicies_path))
-        self.ind2word               = self.indicies['ind2word']
-        self.word2ind               = self.indicies['word2ind']
-        self.img_metadata           = self.indicies['img_metadata_training']
-        self.categories             = self.indicies['categories_training']
+        if len(indicies_path) > 0:
+            self.indicies               = json.load(open(indicies_path))
+            self.ind2word               = self.indicies['ind2word']
+            self.word2ind               = self.indicies['word2ind']
+            self.img_metadata           = self.indicies['img_metadata_training']
+            self.categories             = self.indicies['categories_training']
 
         # read data file
-        self.data = h5py.File(data_path, 'r')
-        self.answers_training           = self.data['answers_training']
-        self.game_index_training        = self.data['game_index_training']
-        self.image_index_training       = self.data['image_index_training']
-        self.image_wh_training          = self.data['image_wh_training']
-        self.objects_bbox_training      = self.data['objects_bbox_training']
-        self.object_index_training      = self.data['object_index_training']
-        self.objects_training           = self.data['objects_training']
-        self.question_length_training   = self.data['question_length_training']
-        self.questions_training         = self.data['questions_training']
-        self.success_training           = self.data['success_training']
-        self.correct_object_training    = self.data['correct_object_training']
+        if len(data_path) > 0:
+            self.data = h5py.File(data_path, 'r')
+            self.answers_training           = self.data['answers_training']
+            self.game_index_training        = self.data['game_index_training']
+            self.image_index_training       = self.data['image_index_training']
+            self.image_wh_training          = self.data['image_wh_training']
+            self.objects_bbox_training      = self.data['objects_bbox_training']
+            self.object_index_training      = self.data['object_index_training']
+            self.objects_training           = self.data['objects_training']
+            self.question_length_training   = self.data['question_length_training']
+            self.questions_training         = self.data['questions_training']
+            self.success_training           = self.data['success_training']
+            self.correct_object_training    = self.data['correct_object_training']
 
         # read images_features file
-        self.image_features_data = h5py.File(images_features_path, 'r')
-        self.all_img_ids        = self.image_features_data['all_img_ids']
-        self.all_img_features   = self.image_features_data['all_img_features']
+        if len(images_features_path) > 0:
+            self.image_features_data = h5py.File(images_features_path, 'r')
+            self.all_img_ids        = self.image_features_data['all_img_ids']
+            self.all_img_features   = self.image_features_data['all_img_features']
 
         # create crop_features file
         if len(crop_features_path) > 0:

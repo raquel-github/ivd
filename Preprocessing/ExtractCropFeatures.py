@@ -17,7 +17,7 @@ indicies_path = 'Data/indices.json'
 images_path = 'Data/Images/Crops'
 img_feat_path = 'Data/image_features.h5'
 
-dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_path=images_path, images_features_path=img_feat_path)
+dr = DataReader(data_path=data_path)
 vgg_ext = VGG_Feature_Extract(images_path=images_path)
 
 game_ids = dr.get_game_ids()
@@ -41,9 +41,6 @@ for i, gid in enumerate(game_ids):
     # print("Image ID\n", img_id)
     # print("Features\n",img_features.data.numpy())
     all_img_features[i] = img_features.data.numpy()
-
-    if i > 3:
-        break
 
 file = h5py.File('Data/image_features_crops.h5', 'w')
 file.create_dataset('all_img_features', dtype='float32', data=all_img_features)
