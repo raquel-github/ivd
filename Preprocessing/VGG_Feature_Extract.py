@@ -2,7 +2,6 @@ import vgg
 import io
 import requests
 from PIL import Image
-import imageio
 import torch
 from torchvision import models, transforms
 from torch.autograd import Variable
@@ -63,9 +62,9 @@ class VGG_Feature_Extract():
         for f in os.listdir(self.images_path+"/"):
             if f.endswith(".jpg"):
                 img_p = self.images_path + "/" + f
-                #channels = numpy.array(Image.open(img_p), dtype=numpy.float) / 255
+                channels = numpy.array(Image.open(img_p), dtype=numpy.float) / 255
                 # we use imageio as it turns out to be faster
-                channels = imageio.imread(img_p) / 255
+                # channels = imageio.imread(img_p) / 255
 
                 if len(channels.shape) == 2:
                     # bw image, convert to RGB
