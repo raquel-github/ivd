@@ -65,38 +65,32 @@ class Decoder(nn.Module):
 
 class DecoderBatch(Decoder):
 
-    def __init__(self, word_embedding_dim, hidden_decoder_dim, visual_features_dim, vocab_size):
-        Decoder.__init__(self, word_embedding_dim, hidden_decoder_dim, visual_features_dim, vocab_size)
+    def __init__(self, word_embedding_dim, hidden_decoder_dim, visual_features_dim, vocab_size, batch_size):
+        Decoder.__init__(self, word_embedding_dim, hidden_decoder_dim, visual_features_dim, vocab_size, batch_size)
 
 
-    def forward(self, visual_features, hidden_encoder, decoder_input):
+    def forward(self, visual_features, hidden_encoder, decoder_input=None):
+
         if hidden_encoder:
             # if encoder hidden state is provided, copy into decoder hidden state
             self.hidden_decoder = hidden_encoder
 
         if decoder_input:
             # if decoder input is provided, copy into previous lstm_out (which will be used as next input)
-            self.lstm_out = decoder_input
+            self.lstm_out = decoder_input.view(1, self.batch_size, -1)
 
 
-        print("Visual before", visual_features.size())
 
-        # get the input to the LSTM encoder by concatenating word embeddings and visual features
-        if use_cuda:
-            visual_features = Variable(torch.cat([visual_features.view(1, 1, -1)] * self.batch_size, dim=1)).cuda()
-        else:
-            visual_features = Variable(torch.cat([visual_features.view(1, 1, -1)] * self.batch_size, dim=1))
+        visual_features = visual_features.view(1, self.batch_size, -1)
 
 
-        print("Visual after", visual_features.size())
-
-
+        decoder_in = torch.cat([self.lstm_out, visual_features], dim=2)
 
 
         self.lstm_out, self.hidden_decoder = self.decoder_lstm(decoder_in, self.hidden_decoder)
 
         # mapping hidden state to word output
-        word_space = self.hidden2word(self.lstm_out.view(1,-1))
+        word_space = self.hidden2word(self.lstm_out[0])
 
         # p(w)
         word_scores = F.log_softmax(word_space)

@@ -1,14 +1,16 @@
 import pickle as pickle
 import torch
 from torch.autograd import Variable
+import numpy as np
+#from DataReader import DataReader
 
-def create_batches(game_ids_train, batch_size):
+def create_batches(game_ids, batch_size):
     """ returns shuffled game batches """
 
-    batches = np.asarray(game_ids_train)
-    n_batches = int(len(game_ids_train)/batch_size)
+    batches = np.asarray(game_ids)
+    n_batches = int(len(game_ids)/batch_size)
 
-    batches = batches[len(game_ids_train) % n_batches:]
+    batches = batches[len(game_ids) % n_batches:]
 
     np.random.shuffle(batches)
     batches = batches.reshape(n_batches, batch_size)
@@ -74,7 +76,7 @@ def preproc_game_for_batch_decoder(dr, gid, length, pad_token, word2index):
     return game_matrix
 
 
-def create_batch_from_games(dr, game_ids, pad_token, encoder_game_path, decoder_game_path):
+def create_batch_from_games(dr, game_ids, pad_token, length, word2index, encoder_game_path, decoder_game_path):
     """ returns the padded batch"""
 
     gameid2matrix_encoder = pickle.load(open(encoder_game_path,'rb'))
@@ -90,10 +92,11 @@ def create_batch_from_games(dr, game_ids, pad_token, encoder_game_path, decoder_
     # then make every item in the list a torch Varibale containing the padding tokens
     encoder_batch = [0] * max_n_questions
     decoder_batch = [0] * max_n_questions
-    for i, eb in enumerate(encoder_batch):
-        encoder_batch[i] = Variable(torch.ones(len(game_ids), length+1) * pad_token)
-        decoder_batch[i] = Variable(torch.ones(len(game_ids), length) * pad_token)
+    for i in range(len(encoder_batch)):
+        encoder_batch[i] = Variable(torch.ones(len(game_ids), length+1, out=torch.LongTensor()) * pad_token)
+        decoder_batch[i] = Variable(torch.ones(len(game_ids), length, out=torch.LongTensor()) * pad_token)
 
+    target_lengths = torch.zeros(len(game_ids), max_n_questions, out=torch.LongTensor())
 
     # insert the questions into the encoder and decoder batch
     for i in range(max_n_questions):
@@ -103,9 +106,15 @@ def create_batch_from_games(dr, game_ids, pad_token, encoder_game_path, decoder_
 
             if len(gameid2matrix_decoder[gid]) > i:
                 decoder_batch[i][j] = gameid2matrix_decoder[gid][i]
+                # get the length of the question, by cheking for the index of the last EOS, the question length is then that index + 1
+                target_lengths[j][i] = int(np.where(gameid2matrix_decoder[gid][i].numpy() == int(word2index['-EOS-']))[0][-1]) + 1
+            else:
+                target_lengths[j][i] = 0
 
+    encoder_batch = [enc_q.transpose(0,1) for enc_q in encoder_batch]
+    decoder_batch = [dec_q.transpose(0,1) for dec_q in decoder_batch]
 
-    return encoder_batch.transpose(0,1), decoder_batch.transpose(0,1)
+    return encoder_batch, decoder_batch, max_n_questions, target_lengths.transpose(0,1)
 
 
 def get_batch_visual_features(dr, game_ids, visual_features_dim):
@@ -143,10 +152,11 @@ pickle.dump(gameid2matrix_encoder, open('gameid2matrix_encoder.p','wb'))
 pickle.dump(gameid2matrix_decoder, open('gameid2matrix_decoder.p','wb'))
 
 
-gameid2matrix_encoder = pickle.load(open('../ivd_data/gameid2matrix_encoder.p','rb'))
-gameid2matrix_decoder = pickle.load(open('../ivd_data/gameid2matrix_decoder.p','rb'))
+gameid2matrix_decoder = pickle.load(open('Preprocessing/preprocessed_games/gameid2matrix_decoder.p','rb'))
 
 game_ids = list(gameid2matrix_decoder.keys())[:3]
-print(get_batch_visual_features(dr, game_ids, 4096))
-#create_batch_from_games(dr, game_ids, pad_token, '../ivd_data/gameid2matrix_encoder.p', '../ivd_data/gameid2matrix_decoder.p')
+#print(get_batch_visual_features(dr, game_ids, 4096))
+a, b, c = create_batch_from_games(dr, game_ids, pad_token, length, 'Preprocessing/preprocessed_games/gameid2matrix_encoder.p', 'Preprocessing/preprocessed_games/gameid2matrix_decoder.p')
+print(b)
+print(c)
 """

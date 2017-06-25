@@ -90,8 +90,6 @@ class EncoderBatch(Encoder):
     def forward(self, sentence_batch):
         """ freivn """
         sentence_batch_embedding = self.word_embeddings(sentence_batch)
-        print(sentence_batch_embedding.size())
-        print(self.hidden_encoder[0].size())
         #packed = torch.nn.utils.rnn.pack_padded_sequence(sentence_batch_embedding, input_lengths)
         encoder_out, self.hidden_encoder = self.encoder_lstm(sentence_batch_embedding, self.hidden_encoder)
 
