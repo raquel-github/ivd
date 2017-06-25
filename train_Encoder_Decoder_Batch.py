@@ -50,15 +50,15 @@ decoder_game_path       = 'Preprocessing/preprocessed_games/gameid2matrix_decode
 
 # Training
 iterations              = 100
-encoder_lr              = 0.001
-decoder_lr              = 0.005
+encoder_lr              = 0.0001
+decoder_lr              = 0.0005
 grad_clip               = 50.
 teacher_forcing         = False # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
 tf_decay_mode           = 'one-by-epoch-squared'
 train_val_ratio         = 0.1
-save_models             = False
-batch_size              = 2
-n_games_to_train        = 10
+save_models             = True
+batch_size              = 32
+n_games_to_train        = 96000
 
 # save hyperparameters in a file
 with open(hyperparameters_file, 'a') as hyp:
@@ -102,10 +102,19 @@ decoder_optimizer = optim.Adam(decoder_model.parameters(), decoder_lr)
 _game_ids = get_game_ids_with_max_length(dr, length)
 game_ids = list()
 # get only successful games
-while len(game_ids) <= n_games_to_train:
-    candidate = np.random.choice(_game_ids)
-    if dr.get_success(candidate) == 1 and candidate not in game_ids:
-        game_ids.append(candidate)
+for _gid in _game_ids:
+    if dr.get_success(_gid) == 1:
+        if len(game_ids) < n_games_to_train:
+            game_ids.append(_gid)
+        else:
+            break
+
+print("Valid game ids done. Number of valid games: ", len(game_ids))
+
+# while len(game_ids) <= n_games_to_train:
+#     candidate = np.random.choice(_game_ids)
+#     if dr.get_success(candidate) == 1 and candidate not in game_ids:
+#         game_ids.append(candidate)
 
 
 # make training validation split
@@ -114,6 +123,7 @@ game_ids_train = [gid for gid in game_ids if gid not in game_ids_val]
 
 
 for epoch in range(iterations):
+    print("Epoch: ", epoch)
     start = time()
     if use_cuda:
         decoder_epoch_loss = torch.cuda.FloatTensor()
@@ -130,19 +140,24 @@ for epoch in range(iterations):
         train_batch = batch in batches
 
         # Initiliaze encoder/decoder hidden state with 0
-        encoder_model.hidden_encoder = encoder_model.init_hidden()
+        encoder_model.hidden_encoder = encoder_model.init_hidden(train_batch)
 
         # get the questions and the visual features of the current game
         visual_features_batch = get_batch_visual_features(dr, batch, visual_features_dim)
 
         encoder_batch_matrix, decoder_batch_matrix, max_n_questions, target_lengths \
-            = create_batch_from_games(dr, batch, int(word2index['-PAD-']), length, word2index, encoder_game_path, decoder_game_path)
+            = create_batch_from_games(dr, batch, int(word2index['-PAD-']), length, word2index, train_batch, encoder_game_path, decoder_game_path)
 
-        if use_cuda:
-            decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size)).cuda()
+        if train_batch:
+            if use_cuda:
+                decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size)).cuda()
+            else:
+                decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size))
         else:
-            decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size))
-
+            if use_cuda:
+                decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size), volatile=True).cuda()
+            else:
+                decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size), volatile=True)
 
         for qn in range(max_n_questions):
 

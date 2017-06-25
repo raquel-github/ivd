@@ -46,13 +46,21 @@ class Encoder(nn.Module):
         else:
             self.sos = Variable(torch.randn(self.word_embedding_dim,1)).view(1,1,-1)
 
-    def init_hidden(self):
-        if use_cuda:
-            return (autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim)).cuda(),
-                    autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim)).cuda())
+    def init_hidden(self, train_batch = 1):
+        if train_batch:
+            if use_cuda:
+                return (autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim)).cuda(),
+                        autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim)).cuda())
+            else:
+                return (autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim)),
+                        autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim)))
         else:
-            return (autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim)),
-                    autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim)))
+            if use_cuda:
+                return (autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim), volatile=True).cuda(),
+                        autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim), volatile=True).cuda())
+            else:
+                return (autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim), volatile=True),
+                        autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim), volatile=True))
 
     def word2embedd(self, w):
         if use_cuda:

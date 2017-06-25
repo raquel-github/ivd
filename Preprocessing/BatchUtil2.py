@@ -11,12 +11,13 @@ def create_batches(game_ids, batch_size):
 
     batches = np.asarray(game_ids)
     n_batches = int(len(game_ids)/batch_size)
-    print('len(game_ids): ',len(game_ids))
-    print('batch_size: ',batch_size)
-    print('n_batches: ',n_batches)
+    if n_batches == 0:
+       assert False, "Number of game ids < batch size."
+
     batches = batches[len(game_ids) % n_batches:]
 
     np.random.shuffle(batches)
+    # if len(batches) > batch_size:
     batches = batches.reshape(n_batches, batch_size)
 
     return batches
@@ -80,7 +81,7 @@ def preproc_game_for_batch_decoder(dr, gid, length, pad_token, word2index):
     return game_matrix
 
 
-def create_batch_from_games(dr, game_ids, pad_token, length, word2index, encoder_game_path, decoder_game_path):
+def create_batch_from_games(dr, game_ids, pad_token, length, word2index, train_batch, encoder_game_path, decoder_game_path):
     """ returns the padded batch"""
 
     gameid2matrix_encoder = pickle.load(open(encoder_game_path,'rb'))
@@ -97,12 +98,20 @@ def create_batch_from_games(dr, game_ids, pad_token, length, word2index, encoder
     encoder_batch = [0] * max_n_questions
     decoder_batch = [0] * max_n_questions
     for i in range(len(encoder_batch)):
-        if use_cuda:
-            encoder_batch[i] = Variable(torch.ones(len(game_ids), length+1, out=torch.LongTensor()) * pad_token).cuda()
-            decoder_batch[i] = Variable(torch.ones(len(game_ids), length, out=torch.LongTensor()) * pad_token).cuda()
+        if train_batch:
+            if use_cuda:
+                encoder_batch[i] = Variable(torch.ones(len(game_ids), length+1, out=torch.LongTensor()) * pad_token).cuda()
+                decoder_batch[i] = Variable(torch.ones(len(game_ids), length, out=torch.LongTensor()) * pad_token).cuda()
+            else:
+                encoder_batch[i] = Variable(torch.ones(len(game_ids), length+1, out=torch.LongTensor()) * pad_token)
+                decoder_batch[i] = Variable(torch.ones(len(game_ids), length, out=torch.LongTensor()) * pad_token)
         else:
-            encoder_batch[i] = Variable(torch.ones(len(game_ids), length+1, out=torch.LongTensor()) * pad_token)
-            decoder_batch[i] = Variable(torch.ones(len(game_ids), length, out=torch.LongTensor()) * pad_token)
+            if use_cuda:
+                encoder_batch[i] = Variable(torch.ones(len(game_ids), length+1,out=torch.LongTensor())*pad_token,volatile=True).cuda()
+                decoder_batch[i] = Variable(torch.ones(len(game_ids), length, out=torch.LongTensor())*pad_token,volatile=True).cuda()
+            else:
+                encoder_batch[i] = Variable(torch.ones(len(game_ids), length+1,out=torch.LongTensor()) * pad_token, volatile=True)
+                decoder_batch[i] = Variable(torch.ones(len(game_ids), length,out=torch.LongTensor())*pad_token, volatile=True)
 
     target_lengths = torch.zeros(len(game_ids), max_n_questions, out=torch.LongTensor())
 
