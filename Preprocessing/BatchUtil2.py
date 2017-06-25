@@ -4,12 +4,16 @@ from torch.autograd import Variable
 import numpy as np
 #from DataReader import DataReader
 
+use_cuda = torch.cuda.is_available()
+
 def create_batches(game_ids, batch_size):
     """ returns shuffled game batches """
 
     batches = np.asarray(game_ids)
     n_batches = int(len(game_ids)/batch_size)
-
+    print('len(game_ids): ',len(game_ids))
+    print('batch_size: ',batch_size)
+    print('n_batches: ',n_batches)
     batches = batches[len(game_ids) % n_batches:]
 
     np.random.shuffle(batches)
@@ -93,8 +97,12 @@ def create_batch_from_games(dr, game_ids, pad_token, length, word2index, encoder
     encoder_batch = [0] * max_n_questions
     decoder_batch = [0] * max_n_questions
     for i in range(len(encoder_batch)):
-        encoder_batch[i] = Variable(torch.ones(len(game_ids), length+1, out=torch.LongTensor()) * pad_token)
-        decoder_batch[i] = Variable(torch.ones(len(game_ids), length, out=torch.LongTensor()) * pad_token)
+        if use_cuda:
+            encoder_batch[i] = Variable(torch.ones(len(game_ids), length+1, out=torch.LongTensor()) * pad_token).cuda()
+            decoder_batch[i] = Variable(torch.ones(len(game_ids), length, out=torch.LongTensor()) * pad_token).cuda()
+        else:
+            encoder_batch[i] = Variable(torch.ones(len(game_ids), length+1, out=torch.LongTensor()) * pad_token)
+            decoder_batch[i] = Variable(torch.ones(len(game_ids), length, out=torch.LongTensor()) * pad_token)
 
     target_lengths = torch.zeros(len(game_ids), max_n_questions, out=torch.LongTensor())
 
@@ -119,7 +127,11 @@ def create_batch_from_games(dr, game_ids, pad_token, length, word2index, encoder
 
 def get_batch_visual_features(dr, game_ids, visual_features_dim):
     """ given a list of game_ids, returns the visual features of the games """
-    visual_features_batch = Variable(torch.zeros(len(game_ids), visual_features_dim))
+    if use_cuda:
+        visual_features_batch = Variable(torch.zeros(len(game_ids), visual_features_dim)).cuda()
+    else:
+        visual_features_batch = Variable(torch.zeros(len(game_ids), visual_features_dim))
+
     for i, gid in enumerate(game_ids):
         visual_features_batch[i] = torch.Tensor(dr.get_image_features(gid))
 
