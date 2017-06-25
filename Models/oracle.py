@@ -41,6 +41,8 @@ class Oracle(nn.Module):
         # LSTM model that encodes Question
         self.lstm = nn.LSTM(embedding_dim, hidden_dim) 
 
+        self.hidden = self.init_hidden()
+
         # MLP model that classifies to an Answer
         self.mlp = nn.Sequential(
             nn.Linear(int(d_in), int(d_hin)),
@@ -60,7 +62,7 @@ class Oracle(nn.Module):
 
     def obj2embedd(self,obj):
         if use_cuda:
-            return self.object_embedding_model(Variable(torch.LongTensor([int(obj)]))).cuda()
+            return self.object_embedding_model(Variable(torch.LongTensor([int(obj)])).cuda())
         else:
             return self.object_embedding_model(Variable(torch.LongTensor([int(obj)])))
 
@@ -86,8 +88,7 @@ class Oracle(nn.Module):
         encoder_in = sentence_embedding.view(len(question.split()), 1, -1)
         
         # LSTM pass
-        hidden = self.init_hidden() 
-        _ , hidden  = self.lstm(encoder_in, hidden)
+        _ , hidden  = self.lstm(encoder_in, self.hidden)
 
         # Format data
         object_class = self.obj2embedd(object_class)
