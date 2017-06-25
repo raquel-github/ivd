@@ -65,10 +65,10 @@ with open(hyperparameters_file, 'a') as hyp:
     hyp.write("length %i \n" %(length))
     hyp.write("word_embedding_dim %i \n" %(word_embedding_dim))
     hyp.write("hidden_encoder_dim %i \n" %(hidden_encoder_dim))
-    hyp.write("encoder_game_path %i \n" %(encoder_game_path))
+    hyp.write("encoder_game_path %s \n" %(encoder_game_path))
     hyp.write("hidden_decoder_dim %i \n" %(hidden_decoder_dim))
     hyp.write("visual_features_dim %i \n" %(visual_features_dim))
-    hyp.write("decoder_game_path %i \n" %(decoder_game_path))
+    hyp.write("decoder_game_path %s \n" %(decoder_game_path))
     hyp.write("iterations %i \n" %(iterations))
     hyp.write("encoder_lr %f \n" %(encoder_lr))
     hyp.write("decoder_lr %f \n" %(decoder_lr))
@@ -133,7 +133,9 @@ for epoch in range(iterations):
         encoder_model.hidden_encoder = encoder_model.init_hidden()
 
         # get the questions and the visual features of the current game
+        s = time()
         visual_features_batch = get_batch_visual_features(dr, batch, visual_features_dim)
+        print("Features extraction time:", time()-s)
 
         encoder_batch_matrix, decoder_batch_matrix, max_n_questions, target_lengths \
             = create_batch_from_games(dr, batch, int(word2index['-PAD-']), length, word2index, encoder_game_path, decoder_game_path)
@@ -153,6 +155,8 @@ for epoch in range(iterations):
             decoder_loss = 0
             decoder_loss_vali = 0
 
+            produced_questions = [''] * batch_size
+
             for t in range(length):
 
                 if t == 0:
@@ -162,6 +166,12 @@ for epoch in range(iterations):
                 else:
                     decoder_out = decoder_model(visual_features_batch, encoder_hidden_state)
                     decoder_outputs[t] = decoder_out
+
+                    _, w_ids = decoder_out.topk(1)
+
+                    for i, w_id in enumerate(w_ids.data.numpy()):
+                        produced_questions[i] += ' ' + index2word[str(w_id[0])]
+
 
             if train_batch:
                 decoder_loss = masked_cross_entropy(decoder_outputs.transpose(0,1).contiguous(), \
@@ -182,7 +192,8 @@ for epoch in range(iterations):
 
                 decoder_epoch_loss = torch.cat([decoder_epoch_loss, decoder_loss.data])
 
-            else:
+
+            else: # vali batch
                 decoder_loss_vali = masked_cross_entropy(decoder_outputs.transpose(0,1).contiguous(), \
                     decoder_batch_matrix[qn].transpose(0,1).contiguous(),\
                     target_lengths[qn])
@@ -191,7 +202,13 @@ for epoch in range(iterations):
 
                 decoder_epoch_loss_validation = torch.cat([decoder_epoch_loss_validation, decoder_loss_vali.data])
 
-            
+
+            for gid in batch:
+                if gid in game_ids_train[::2] + game_ids_val[::2]:
+                    with open(output_file, 'a') as out:
+                        out.write("%03d, %i, %i, %i, %s\n" %(epoch, gid, qid, gid in game_ids_train[::2], prod_q))
+
+
 
 
     print("Epoch %03d, Time taken %.2f, Training-Loss %.5f, Validation-Loss %.5f" %(epoch, time()-start,torch.mean(decoder_epoch_loss), torch.mean(decoder_epoch_loss_validation)))
