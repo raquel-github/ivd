@@ -3,7 +3,7 @@ import torch
 from torch.autograd import Variable
 
 def create_batches(game_ids_train, batch_size):
-    """ returns game batches with from gloabl varibale batch size"""
+    """ returns shuffled game batches """
 
     batches = np.asarray(game_ids_train)
     n_batches = int(len(game_ids_train)/batch_size)
@@ -159,8 +159,4 @@ def create_batch(game_ids, path_to_preproc_games, length, pad_token):
     max_n_questions = -1
     for gid in game_ids:
         # load the game
-
-
-
-
-from time import time
+        pass

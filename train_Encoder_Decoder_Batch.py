@@ -1,7 +1,7 @@
 from Models.Encoder import EncoderBatch as Encoder
 from Models.Decoder import DecoderBatch as Decoder
 from Preprocessing.DataReader import DataReader
-from batchutil import create_batch_matrix, create_batches
+from Preprocessing.BatchUtil2 import create_batches, get_game_ids_with_max_length, create_batch_from_games, get_batch_visual_features
 
 import numpy as np
 from time import time

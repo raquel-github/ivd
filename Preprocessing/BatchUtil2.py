@@ -34,7 +34,10 @@ def get_game_ids_with_max_length(dr, length):
 
 
 def preproc_game_for_batch_encoder(dr, gid, length, pad_token, word2index):
-    """ preprocesses a game for batch. Will add padding tokens at the end of every question if required. """
+    """ preprocesses a game for encoder batch. Will add padding tokens at the end of every question if required.
+    the first question of the enoder batch is only the SOS token
+    the last question in the game questions not be considered
+    """
 
     questions   = dr.get_questions(gid)
     n_questions = len(questions)
@@ -56,7 +59,7 @@ def preproc_game_for_batch_encoder(dr, gid, length, pad_token, word2index):
     return game_matrix
 
 def preproc_game_for_batch_decoder(dr, gid, length, pad_token, word2index):
-    """ preprocesses a game for batch. Will add padding tokens at the end of every question if required. """
+    """ preprocesses a game for decoder batch. Will add padding tokens at the end of every question if required. """
 
     questions   = dr.get_questions(gid)
     n_questions = len(questions)
