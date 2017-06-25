@@ -29,11 +29,14 @@ class Oracle(nn.Module):
         self.object_embedding_dim = object_embedding_dim
         self.word2index = word2index
 
-        # Object Embeddings
-        self.object_embedding_model = nn.Embedding(categories_length, object_embedding_dim)
-        
-        # Word Embeddings
-        self.word_embeddings = nn.Embedding(vocab_size, embedding_dim)
+        # Embeddings
+        if use_cuda:
+            self.object_embedding_model = nn.Embedding(categories_length, object_embedding_dim).cuda()
+            self.word_embeddings = nn.Embedding(vocab_size, embedding_dim).cuda()
+        else:
+            self.object_embedding_model = nn.Embedding(categories_length, object_embedding_dim)
+            self.word_embeddings = nn.Embedding(vocab_size, embedding_dim)
+
 
         # LSTM model that encodes Question
         self.lstm = nn.LSTM(embedding_dim, hidden_dim) 
@@ -50,10 +53,16 @@ class Oracle(nn.Module):
         )
 
     def word2embedd(self, w):
-        return self.word_embeddings(Variable(torch.LongTensor([self.word2index[w]])))
+        if use_cuda:
+            return self.word_embeddings(Variable(torch.LongTensor([self.word2index[w]]))).cuda()
+        else:
+            return self.word_embeddings(Variable(torch.LongTensor([self.word2index[w]])))
 
     def obj2embedd(self,obj):
-        return self.object_embedding_model(Variable(torch.LongTensor([int(obj)]) ))
+        if use_cuda:
+            return self.object_embedding_model(Variable(torch.LongTensor([int(obj)]))).cuda()
+        else:
+            return self.object_embedding_model(Variable(torch.LongTensor([int(obj)])))
 
     def init_hidden(self):
         if use_cuda:
@@ -69,6 +78,7 @@ class Oracle(nn.Module):
             sentence_embedding = Variable(torch.zeros(len(question.split()), self.embedding_dim)).cuda()
         else:
             sentence_embedding = Variable(torch.zeros(len(question.split()), self.embedding_dim))
+        
         for i, w in enumerate(question.split()):
             sentence_embedding[i] = self.word2embedd(w)
 
@@ -87,7 +97,11 @@ class Oracle(nn.Module):
         hidden_lstm = hidden[0].view(1,-1)
 
         #Get answer
-        mlp_in = Variable(torch.cat([image, crop, spatial.data, object_class.data, hidden_lstm.data],dim=1))
+
+        if use_cuda:
+            mlp_in = Variable(torch.cat([image, crop, spatial.data, object_class.data, hidden_lstm.data],dim=1)).cuda()
+        else:
+            mlp_in = Variable(torch.cat([image, crop, spatial.data, object_class.data, hidden_lstm.data],dim=1))
 
         # MLP pass
         mlp_out = self.mlp(mlp_in) 
