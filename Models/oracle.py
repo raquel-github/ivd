@@ -54,7 +54,7 @@ class Oracle(nn.Module):
 
     def word2embedd(self, w):
         if use_cuda:
-            return self.word_embeddings(Variable(torch.LongTensor([self.word2index[w]]))).cuda()
+            return self.word_embeddings(Variable(torch.LongTensor([self.word2index[w]])).cuda())
         else:
             return self.word_embeddings(Variable(torch.LongTensor([self.word2index[w]])))
 
