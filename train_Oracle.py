@@ -16,6 +16,8 @@ from Models.oracle import Oracle
 from Preprocessing.DataReader import DataReader
 from Models.Guesser import Guesser
 
+use_cuda = torch.cuda.is_available()
+
 def img_spatial(img_meta):
         """ returns the spatial information of a bounding box """
         bboxes = img_meta[0] # gets all bboxes in the image
@@ -106,6 +108,10 @@ def train():
 
             quas = dr.get_questions(gid)
             answers = dr.get_answers(gid)
+
+            if use_cuda:
+                image = image.cuda()
+
             for qi,question in enumerate(quas):
                 outputs = model(question, spatial, object_class, crop, image)
 
