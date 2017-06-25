@@ -82,6 +82,10 @@ def train():
 
     #Instance of Oracle om LSTM en MLP te runnen?
     model = Oracle(vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index)
+    
+    if use_cuda:
+        model.cuda()
+
     loss = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.00001)
 
