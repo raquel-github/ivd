@@ -36,13 +36,13 @@ length                  = 11
 # Encoder
 word2index              = dr.get_word2ind()
 vocab_size              = len(word2index)
-word_embedding_dim      = 512
-hidden_encoder_dim      = 512
+word_embedding_dim      = 256
+hidden_encoder_dim      = 256
 encoder_model_path      = 'Models/bin/enc'
 encoder_game_path       = 'Preprocessing/preprocessed_games/gameid2matrix_encoder.p'
 
 # Decoder
-hidden_decoder_dim      = 512
+hidden_decoder_dim      = 256
 index2word              = dr.get_ind2word()
 visual_features_dim     = 4096
 decoder_model_path      = 'Models/bin/dec'
@@ -57,7 +57,7 @@ teacher_forcing         = False # if TRUE, the decoder input will always be the 
 tf_decay_mode           = 'one-by-epoch-squared'
 train_val_ratio         = 0.1
 save_models             = True
-batch_size              = 32
+batch_size              = 16
 n_games_to_train        = 96000
 
 # save hyperparameters in a file
