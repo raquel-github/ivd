@@ -2,6 +2,8 @@ import torch
 from torch.nn import functional
 from torch.autograd import Variable
 
+use_cuda = torch.cuda.is_available()
+
 def sequence_mask(sequence_length, max_len=None):
     if max_len is None:
         max_len = sequence_length.data.max()
@@ -17,9 +19,10 @@ def sequence_mask(sequence_length, max_len=None):
 
 
 def masked_cross_entropy(logits, target, length):
-    #length = Variable(torch.LongTensor(length)).cuda()
-    length = Variable(torch.LongTensor(length))
-
+    if use_cuda:
+        length = Variable(torch.LongTensor(length)).cuda()
+    else:
+        length = Variable(torch.LongTensor(length))
     """
     Args:
         logits: A Variable containing a FloatTensor of size

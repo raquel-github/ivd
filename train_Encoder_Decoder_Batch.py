@@ -58,7 +58,7 @@ tf_decay_mode           = 'one-by-epoch-squared'
 train_val_ratio         = 0.1
 save_models             = False
 batch_size              = 2
-n_games_to_train        = 20
+n_games_to_train        = 10
 
 # save hyperparameters in a file
 with open(hyperparameters_file, 'a') as hyp:
@@ -102,7 +102,7 @@ decoder_optimizer = optim.Adam(decoder_model.parameters(), decoder_lr)
 _game_ids = get_game_ids_with_max_length(dr, length)
 game_ids = list()
 # get only successful games
-while len(game_ids) < n_games_to_train:
+while len(game_ids) <= n_games_to_train:
     candidate = np.random.choice(_game_ids)
     if dr.get_success(candidate) == 1 and candidate not in game_ids:
         game_ids.append(candidate)
@@ -133,15 +133,15 @@ for epoch in range(iterations):
         encoder_model.hidden_encoder = encoder_model.init_hidden()
 
         # get the questions and the visual features of the current game
-        s = time()
         visual_features_batch = get_batch_visual_features(dr, batch, visual_features_dim)
-        print("Features extraction time:", time()-s)
 
         encoder_batch_matrix, decoder_batch_matrix, max_n_questions, target_lengths \
             = create_batch_from_games(dr, batch, int(word2index['-PAD-']), length, word2index, encoder_game_path, decoder_game_path)
 
-        decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size))
-
+        if use_cuda:
+            decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size)).cuda()
+        else:
+            decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size))
 
 
         for qn in range(max_n_questions):
@@ -160,8 +160,12 @@ for epoch in range(iterations):
             for t in range(length):
 
                 if t == 0:
-                    decoder_out = decoder_model(visual_features_batch, encoder_hidden_state, \
-                        encoder_model.word_embeddings(Variable(torch.LongTensor([int(word2index['-SOS-'])]*batch_size))))
+                    if use_cuda:
+                        sos_embedding = encoder_model.word_embeddings(Variable(torch.LongTensor([int(word2index['-SOS-'])]*batch_size)).cuda())
+                    else:
+                        sos_embedding = encoder_model.word_embeddings(Variable(torch.LongTensor([int(word2index['-SOS-'])]*batch_size)))
+                        
+                    decoder_out = decoder_model(visual_features_batch, encoder_hidden_state, sos_embedding)
 
                 else:
                     decoder_out = decoder_model(visual_features_batch, encoder_hidden_state)
@@ -169,6 +173,8 @@ for epoch in range(iterations):
 
                     _, w_ids = decoder_out.topk(1)
 
+                    if use_cuda:
+                        w_ids = w_ids.cpu()
                     for i, w_id in enumerate(w_ids.data.numpy()):
                         produced_questions[i] += ' ' + index2word[str(w_id[0])]
 
@@ -206,7 +212,7 @@ for epoch in range(iterations):
             for gid in batch:
                 if gid in game_ids_train[::2] + game_ids_val[::2]:
                     with open(output_file, 'a') as out:
-                        out.write("%03d, %i, %i, %i, %s\n" %(epoch, gid, qid, gid in game_ids_train[::2], prod_q))
+                        out.write("%03d, %i, %i, %i, %s\n" %(epoch, gid, qn, gid in game_ids_train[::2], produced_questions))
 
 
 
