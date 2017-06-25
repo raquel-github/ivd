@@ -122,7 +122,10 @@ class OracleBatch(Oracle):
 
     def forward(self, question, spatial, object_class, crop, image, num):
 
+        # Save the result for all qa pairs in the batch
         out = torch.Tensor(num, 3)
+        
+        # Loop over all QA pairs
         for i in range(num):
 
             if use_cuda:
@@ -163,4 +166,5 @@ class OracleBatch(Oracle):
             # MLP pass
             out[i] = self.mlp(mlp_in).data
 
+        # Return the results
         return Variable(out) 

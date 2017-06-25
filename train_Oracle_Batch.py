@@ -88,22 +88,29 @@ def train():
     #Instance of Oracle om LSTM en MLP te runnen?
     model = Oracle(vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size)
     
+    # Are we using cuda?
     if use_cuda:
         model.cuda()
 
+    # Create loss and optimizer object
     loss = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.00001)
 
+    # Get the game IDs
     # gameids = dr.get_game_ids()
     gameids = range(53)
 
+    # Split games in validation and training set
     gameids_val = list(np.random.choice(gameids, int(train_val_ratio*len(gameids))))
     gameids_train = [gid for gid in gameids if gid not in gameids_val]
 
-    #Get Game/Question and run model
+    # Run epochs
     for epoch in range(max_iter):
+
+        # Save start time
         start = time()
 
+        # Create tensors for the training and validation loss
         if use_cuda:
             oracle_epoch_loss = torch.cuda.FloatTensor()
             oracle_epoch_loss_valid = torch.cuda.FloatTensor()
@@ -111,79 +118,87 @@ def train():
             oracle_epoch_loss = torch.Tensor()
             oracle_epoch_loss_valid = torch.Tensor()
 
+        # Create the batches
         batches = create_batches(gameids_train, batch_size)
         batches_val = create_batches(gameids_val, batch_size) 
         
+        # Print epoch number
         print("Epoch number %d" % (epoch))
-        # for gid in gameids:
-            
+
+        # Loop over batches
         for batch in np.vstack([batches, batches_val]):
 
-            train_loss = 0
-            val_loss = 0
-
+            # Reset the optimizer gradient
             optimizer.zero_grad()
 
+            # Save statistics about the images
             corresponding_gids = []
             processed_questions = []
             processed_answers = []
 
+            # For each question in the batch, save the answer, questions and the
+            # corresponding game ID
             for x in batch:
 
+                # Save the answer
                 answers = dr.get_answers(x)
 
+                # Parse the question
                 for qi, q in enumerate(dr.get_questions(x)):
                     corresponding_gids.append(int(x))
                     processed_questions.append(" ".join(q.split()[1:-1]))
                     processed_answers.append(ans2id[answers[qi]])
 
+            # Save the number of processed questions
             num_qas = len(processed_questions)
 
-            # questions_batch = torch.Tensor(num_qas, max_q_len)
-            # answers_batch = torch.Tensor(num_qas, 1)
+            # Create lists for the image, crop, spatial en object class data
             img_batch = []
             crop_batch = []
             object_class_batch = []
             spatial_batch = []
 
+            # Loop over all processed questions
             for i in range(len(processed_questions)):
-                # print(i)
-
-
-                # questions_batch[i] = torch.LongTensor(padded_question)
-                # answers_batch[i] = torch.Tensor(processed_answers[i])
+                
+                # Save visual features
                 img_batch.append(torch.Tensor(dr.get_image_features(corresponding_gids[i])))
                 crop_batch.append(torch.Tensor(dr.get_crop_features(corresponding_gids[i])))
 
+                # Fetch information about the objects
                 objects = dr.get_object_ids(corresponding_gids[i])
                 object_classes = dr.get_category_id(corresponding_gids[i])
                 correct = dr.get_target_object(corresponding_gids[i])
                 spatial = dr.get_image_meta(corresponding_gids[i])
 
+                # Store information about the correct object
                 for j, obj in enumerate(objects):
                     if obj == correct:
                         spatial_batch.append(img_spatial(spatial)[j])
                         object_class_batch.append(object_classes[j])
                         break
 
-
+            # Pass batch on to the model
             output = model(processed_questions, spatial_batch, object_class_batch, crop_batch, img_batch, len(processed_questions))
 
+            # Create tensor of the correct answers
             if use_cuda:
                 answer = Variable(torch.LongTensor(processed_answers)).cuda()
             else:
                 answer = Variable(torch.LongTensor(processed_answers))
 
+            # Calculate the loss
             cost = loss(output, answer)
 
             print(cost)
 
+            # Check if we need to include this loss in the training or validation loss
             if batch[0] in gameids_val:
                 oracle_epoch_loss_valid = torch.cat([oracle_epoch_loss, cost.data])
             else:
                 oracle_epoch_loss = torch.cat([oracle_epoch_loss, cost.data])
     
-            # Backpropogate Errors 
+            # Backpropogate Errors TODO: DOES NOT WORK YET :(
             optimizer.zero_grad() 
             cost.backward()
             optimizer.step()
