@@ -68,6 +68,7 @@ def train():
     spatial_len = 8
     embedding_dim = 512
     word2index = dr.get_word2ind()
+    index2word = dr.get_ind2word()
     vocab_size = len(word2index)
     object_embedding_dim = 20
     train_val_ratio = 0.1
@@ -96,11 +97,8 @@ def train():
     # gameids = dr.get_game_ids()
     gameids = range(53)
 
-    print("a")
     gameids_val = list(np.random.choice(gameids, int(train_val_ratio*len(gameids))))
-    print("b")
     gameids_train = [gid for gid in gameids if gid not in gameids_val]
-    print("c")
 
     #Get Game/Question and run model
     for epoch in range(max_iter):
@@ -108,8 +106,10 @@ def train():
 
         if use_cuda:
             oracle_epoch_loss = torch.cuda.FloatTensor()
+            oracle_epoch_loss_valid = torch.cuda.FloatTensor()
         else:
             oracle_epoch_loss = torch.Tensor()
+            oracle_epoch_loss_valid = torch.Tensor()
 
         batches = create_batches(gameids_train, batch_size)
         batches_val = create_batches(gameids_val, batch_size) 
@@ -119,9 +119,7 @@ def train():
             
         for batch in np.vstack([batches, batches_val]):
 
-            print(batch)
-
-            loss = 0
+            train_loss = 0
             val_loss = 0
 
             optimizer.zero_grad()
@@ -130,43 +128,32 @@ def train():
             processed_questions = []
             processed_answers = []
 
-            max_q_len = 0
-
             for x in batch:
 
-                answers = dr.get_answers_ids(x)
+                answers = dr.get_answers(x)
 
-                for qi, q in enumerate(dr.get_questions_ids(x)):
-                    if sum(q) == 0:
-                        break
-
-                    corresponding_gids.append(x)
-
-                    actual = [int(i) for i in q if i != 0][1:-1]
-                    processed_questions.append(actual)
-                    processed_answers.append(answers[qi])
-
-                    max_q_len = max(max_q_len, len(actual))
+                for qi, q in enumerate(dr.get_questions(x)):
+                    corresponding_gids.append(int(x))
+                    processed_questions.append(" ".join(q.split()[1:-1]))
+                    processed_answers.append(ans2id[answers[qi]])
 
             num_qas = len(processed_questions)
 
-            questions_batch = torch.Tensor(num_qas, max_q_len)
+            # questions_batch = torch.Tensor(num_qas, max_q_len)
             # answers_batch = torch.Tensor(num_qas, 1)
-            img_batch = torch.Tensor(num_qas, visual_len)
-            crop_batch = torch.Tensor(num_qas, visual_len)
-            object_class_batch = torch.Tensor(num_qas, 1)
-            spatial_batch = torch.Tensor(num_qas, spatial_len)
+            img_batch = []
+            crop_batch = []
+            object_class_batch = []
+            spatial_batch = []
 
-            for i in range(1): #range(len(processed_questions)):
-                print(i)
+            for i in range(len(processed_questions)):
+                # print(i)
 
-                padded_question = np.zeros(max_q_len, dtype=int)
-                for j in range(len(processed_questions[i])):
-                    padded_question[j] = processed_questions[i][j]
 
-                questions_batch[i] = torch.LongTensor(padded_question)
-                img_batch[i] = torch.Tensor(dr.get_image_features(corresponding_gids[i]))
-                crop_batch[i] = torch.Tensor(dr.get_crop_features(corresponding_gids[i]))
+                # questions_batch[i] = torch.LongTensor(padded_question)
+                # answers_batch[i] = torch.Tensor(processed_answers[i])
+                img_batch.append(torch.Tensor(dr.get_image_features(corresponding_gids[i])))
+                crop_batch.append(torch.Tensor(dr.get_crop_features(corresponding_gids[i])))
 
                 objects = dr.get_object_ids(corresponding_gids[i])
                 object_classes = dr.get_category_id(corresponding_gids[i])
@@ -175,31 +162,34 @@ def train():
 
                 for j, obj in enumerate(objects):
                     if obj == correct:
-                        spatial_batch[i] = img_spatial(spatial)[j].data
-                        object_class_batch[i] = int(object_classes[j])
+                        spatial_batch.append(img_spatial(spatial)[j])
+                        object_class_batch.append(object_classes[j])
                         break
 
 
-            output = model(questions_batch, spatial_batch, object_class_batch, crop_batch, img_batch)
+            output = model(processed_questions, spatial_batch, object_class_batch, crop_batch, img_batch, len(processed_questions))
 
-            exit(0)
-            for qi,question in enumerate(quas):
-                outputs = model(question, spatial, object_class, crop, image)
+            if use_cuda:
+                answer = Variable(torch.LongTensor(processed_answers)).cuda()
+            else:
+                answer = Variable(torch.LongTensor(processed_answers))
 
-                if use_cuda:
-                    answer = Variable(torch.LongTensor([ans2id[answers[qi]]])).cuda()
-                else:
-                    answer = Variable(torch.LongTensor([ans2id[answers[qi]]]))
+            cost = loss(output, answer)
 
-                cost = loss(outputs,answer)
-                oracle_epoch_loss = torch.cat([oracle_epoch_loss,cost.data])
+            print(cost)
+
+            if batch[0] in gameids_val:
+                oracle_epoch_loss_valid = torch.cat([oracle_epoch_loss, cost.data])
+            else:
+                oracle_epoch_loss = torch.cat([oracle_epoch_loss, cost.data])
     
-                # Backpropogate Errors 
-                optimizer.zero_grad() 
-                cost.backward()
-                optimizer.step()
+            # Backpropogate Errors 
+            optimizer.zero_grad() 
+            cost.backward()
+            optimizer.step()
 
         print("time:" + str(time()-start) + " \n Loss:" + str(torch.mean(oracle_epoch_loss)))
+        print("Validation loss: " + str(torch.mean(oracle_epoch_loss_valid)))
 
 
 if __name__ == '__main__':

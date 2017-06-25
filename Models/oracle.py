@@ -69,11 +69,11 @@ class Oracle(nn.Module):
 
     def init_hidden(self):
         if use_cuda:
-            return (autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_dim)).cuda(),
-                    autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_dim)).cuda())
+            return (autograd.Variable(torch.zeros(1, 1, self.hidden_dim)).cuda(),
+                    autograd.Variable(torch.zeros(1, 1, self.hidden_dim)).cuda())
         else:
-            return (autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_dim)),
-                    autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_dim)))
+            return (autograd.Variable(torch.zeros(1, 1, self.hidden_dim)),
+                    autograd.Variable(torch.zeros(1, 1, self.hidden_dim)))
 
     def forward(self, question, spatial, object_class, crop, image):
         # Compute representation of the sentence
@@ -120,33 +120,47 @@ class OracleBatch(Oracle):
     def __init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size):
         Oracle.__init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size)
 
-    def forward(self, question, spatial, object_class, crop, image):
-        sentence_embedding = self.word_embeddings(Variable(question))
-        
-        # LSTM pass
-        _ , hidden  = self.lstm(encoder_in, self.hidden)
+    def forward(self, question, spatial, object_class, crop, image, num):
 
-        # Format data
-        object_class = self.obj2embedd(object_class)
+        out = torch.Tensor(num, 3)
+        for i in range(num):
 
-        if use_cuda:
-            image = image.view(1, -1).cuda()
-            crop = crop.view(1, -1).cuda()
-            spatial = spatial.view(1,-1).cuda()
-        else:
-            image = image.view(1, -1)
-            crop = crop.view(1, -1)
-            spatial = spatial.view(1,-1)
+            if use_cuda:
+                sentence_embedding = Variable(torch.zeros(len(question[i].split()), self.embedding_dim)).cuda()
+            else:
+                sentence_embedding = Variable(torch.zeros(len(question[i].split()), self.embedding_dim))
+            
+            for j, w in enumerate(question[i].split()):
+                sentence_embedding[j] = self.word2embedd(w)
 
-        hidden_lstm = hidden[0].view(1,-1)
+            # print(sentence_embedding)
+            encoder_in = sentence_embedding.view(len(question[i].split()), 1, -1)
+            
+            # LSTM pass
+            _ , hidden  = self.lstm(encoder_in, self.hidden)
 
-        #Get answer
+            # Format data
+            object_class_emb = self.obj2embedd(object_class[i])
 
-        if use_cuda:
-            mlp_in = Variable(torch.cat([image, crop, spatial.data, object_class.data, hidden_lstm.data],dim=1)).cuda()
-        else:
-            mlp_in = Variable(torch.cat([image, crop, spatial.data, object_class.data, hidden_lstm.data],dim=1))
+            if use_cuda:
+                image_emb = image[i].view(1, -1).cuda()
+                crop_emb = crop[i].view(1, -1).cuda()
+                spatial_emb = spatial[i].view(1,-1).cuda()
+            else:
+                image_emb = image[i].view(1, -1)
+                crop_emb = crop[i].view(1, -1)
+                spatial_emb = spatial[i].view(1,-1)
 
-        # MLP pass
-        mlp_out = self.mlp(mlp_in) 
-        return mlp_out 
+            hidden_lstm = hidden[0].view(1,-1)
+
+            #Get answer
+
+            if use_cuda:
+                mlp_in = Variable(torch.cat([image_emb, crop_emb, spatial_emb.data, object_class_emb.data, hidden_lstm.data],dim=1)).cuda()
+            else:
+                mlp_in = Variable(torch.cat([image_emb, crop_emb, spatial_emb.data, object_class_emb.data, hidden_lstm.data],dim=1))
+
+            # MLP pass
+            out[i] = self.mlp(mlp_in).data
+
+        return Variable(out) 
