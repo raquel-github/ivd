@@ -109,9 +109,6 @@ def train():
             quas = dr.get_questions(gid)
             answers = dr.get_answers(gid)
 
-            if use_cuda:
-                image = image.cuda()
-
             for qi,question in enumerate(quas):
                 outputs = model(question, spatial, object_class, crop, image)
 

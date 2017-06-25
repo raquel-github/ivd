@@ -65,7 +65,10 @@ class Oracle(nn.Module):
 
     def forward(self, question, spatial, object_class, crop, image, training=True):
         # Compute representation of the sentence
-        sentence_embedding = Variable(torch.zeros(len(question.split()), self.embedding_dim))
+        if use_cuda:
+            sentence_embedding = Variable(torch.zeros(len(question.split()), self.embedding_dim)).cuda()
+        else:
+            sentence_embedding = Variable(torch.zeros(len(question.split()), self.embedding_dim))
         for i, w in enumerate(question.split()):
             sentence_embedding[i] = self.word2embedd(w)
 
@@ -89,8 +92,3 @@ class Oracle(nn.Module):
         # MLP pass
         mlp_out = self.mlp(mlp_in) 
         return mlp_out 
-
-
-
-
-
