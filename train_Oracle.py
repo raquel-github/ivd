@@ -51,11 +51,11 @@ def train():
     max_iter = 10 
 
     # Load data
-    data_path               = "Preprocessing/Data/preprocessed.h5"
-    indicies_path           = "Preprocessing/Data/indices.json"
+    data_path               = "../ivd_data/preprocessed.h5"
+    indicies_path           = "../ivd_data/indices.json"
     images_path             = "Preprocessing/Data/Images"
-    images_features_path    = "Preprocessing/Data/image_features.h5"   
-    crop_features_path      = "Preprocessing/Data/image_features_crops.h5" 
+    images_features_path    = "../ivd_data/image_features.h5"   
+    crop_features_path      = "../ivd_data/image_features_crops.h5" 
     dr = DataReader(data_path, indicies_path, images_path, images_features_path, crop_features_path)
     ans2id = {"Yes": 0,"No": 1,"N/A": 2}
 
@@ -117,6 +117,9 @@ def train():
                 optimizer.zero_grad() 
                 cost.backward()
                 optimizer.step()
+
         print("time:" + str(time()-start) + " \n Loss:" + str(torch.mean(oracle_epoch_loss)))
+
+
 if __name__ == '__main__':
     train()
