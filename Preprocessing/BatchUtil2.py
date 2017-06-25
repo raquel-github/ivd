@@ -1,6 +1,7 @@
 import pickle as pickle
 import torch
 from torch.autograd import Variable
+import numpy as np
 
 def create_batches(game_ids_train, batch_size):
     """ returns shuffled game batches """

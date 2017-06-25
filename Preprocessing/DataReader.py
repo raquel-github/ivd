@@ -130,6 +130,9 @@ class DataReader():
 
         return questions
 
+    def get_questions_ids(self, game_id):
+        return self.questions_training[game_id]
+
     def get_question_max_length(self):
         return len(self.questions_training[0][0])
 
@@ -143,6 +146,9 @@ class DataReader():
             answers.append(self.ind2word[str(awi)])
 
         return answers
+
+    def get_answers_ids(self, game_id):
+        return self.answers_training[game_id]
 
 
     def get_object_ids(self, game_id):
