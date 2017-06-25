@@ -92,9 +92,16 @@ class Oracle(nn.Module):
 
         # Format data
         object_class = self.obj2embedd(object_class)
-        image = image.view(1, -1)
-        crop = crop.view(1, -1)
-        spatial = spatial.view(1,-1)
+
+        if use_cuda:
+            image = image.view(1, -1).cuda()
+            crop = crop.view(1, -1).cuda()
+            spatial = spatial.view(1,-1).cuda()
+        else:
+            image = image.view(1, -1)
+            crop = crop.view(1, -1)
+            spatial = spatial.view(1,-1)
+
         hidden_lstm = hidden[0].view(1,-1)
 
         #Get answer
