@@ -57,7 +57,7 @@ teacher_forcing         = False # if TRUE, the decoder input will always be the 
 tf_decay_mode           = 'one-by-epoch-squared'
 train_val_ratio         = 0.1
 save_models             = True
-batch_size              = 32
+batch_size              = 64    
 n_games_to_train        = 96000
 
 # save hyperparameters in a file
