@@ -93,7 +93,11 @@ def train():
     gameids = range(10)#dr.get_game_ids()
     for epoch in range(max_iter):
         start = time()
-        oracle_epoch_loss = torch.Tensor()
+
+        if use_cuda:
+            oracle_epoch_loss = torch.cuda.FloatTensor()
+        else:
+            oracle_epoch_loss = torch.Tensor()
         
         print("Epoch number %d" % (epoch))
         for gid in gameids:
@@ -116,7 +120,11 @@ def train():
             for qi,question in enumerate(quas):
                 outputs = model(question, spatial, object_class, crop, image)
 
-                answer = Variable(torch.LongTensor([ans2id[answers[qi]]]))
+                if use_cuda:
+                    answer = Variable(torch.LongTensor([ans2id[answers[qi]]])).cuda()
+                else:
+                    answer = Variable(torch.LongTensor([ans2id[answers[qi]]]))
+
                 cost = loss(outputs,answer)
                 oracle_epoch_loss = torch.cat([oracle_epoch_loss,cost.data])
     
