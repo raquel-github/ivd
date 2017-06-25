@@ -15,6 +15,7 @@ class DataReader():
             self.word2ind               = self.indicies['word2ind']
             self.img_metadata           = self.indicies['img_metadata_training']
             self.categories             = self.indicies['categories_training']
+            self.imgID2id               = self.indicies['imgID2id']
 
         # read data file
         if len(data_path) > 0:
@@ -105,7 +106,7 @@ class DataReader():
     def get_image_features(self, game_id):
         """ given a game id, return the features of the image for that game """
         image_id = self.get_image_id(game_id)
-        feature_id = list(self.all_img_ids).index(image_id)
+        feature_id = int(self.imgID2id[str(image_id)])
         return self.all_img_features[feature_id]
 
     def get_crop_features(self, game_id):
