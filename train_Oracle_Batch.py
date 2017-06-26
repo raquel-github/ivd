@@ -51,7 +51,7 @@ def img_spatial(img_meta):
         return spatial
 
 def train():
-    max_iter = 10 
+    max_iter = 100
 
     # Load data
     data_path               = "../ivd_data/preprocessed.h5"
@@ -83,7 +83,7 @@ def train():
     d_hidden = (d_hin+d_out)/2
     d_hout = (d_hidden+d_out)/2
 
-    batch_size = 5
+    batch_size = 20
 
     #Instance of Oracle om LSTM en MLP te runnen?
     model = Oracle(vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size)
@@ -98,7 +98,7 @@ def train():
 
     # Get the game IDs
     gameids = dr.get_game_ids()
-    # gameids = range(53)
+    # gameids = range(250)
 
     # Split games in validation and training set
     gameids_val = list(np.random.choice(gameids, int(train_val_ratio*len(gameids))))
@@ -193,13 +193,15 @@ def train():
             else:
                 oracle_epoch_loss = torch.cat([oracle_epoch_loss, cost.data])
     
-            # Backpropogate Errors TODO: DOES NOT WORK YET :(
+            # Backpropogate Errors 
             optimizer.step()
             cost.backward()
             optimizer.zero_grad() 
 
         print("time:" + str(time()-start) + " \n Loss:" + str(torch.mean(oracle_epoch_loss)))
         print("Validation loss: " + str(torch.mean(oracle_epoch_loss_valid)))
+
+        torch.save(model.state_dict(), 'Models/bin/oracle_model')
 
 
 if __name__ == '__main__':
