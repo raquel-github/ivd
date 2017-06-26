@@ -14,10 +14,8 @@ def create_batches(game_ids, batch_size):
     if n_batches == 0:
        assert False, "Number of game ids < batch size."
 
-    batches = batches[len(game_ids) % n_batches:]
-
     np.random.shuffle(batches)
-    # if len(batches) > batch_size:
+    batches = batches[:n_batches * batch_size]
     batches = batches.reshape(n_batches, batch_size)
 
     return batches

@@ -55,7 +55,7 @@ decoder_game_path       = 'Preprocessing/preprocessed_games/gameid2matrix_decode
 # Training
 iterations              = 100
 encoder_lr              = 0.0001
-decoder_lr              = 0.0005
+decoder_lr              = 0.0001
 grad_clip               = 50.
 teacher_forcing         = False # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
 tf_decay_mode           = 'one-by-epoch-squared'
