@@ -46,7 +46,7 @@ encoder_model_path      = 'Models/bin/enc'
 encoder_game_path       = 'Preprocessing/preprocessed_games/gameid2matrix_encoder.p'
 
 # Decoder
-hidden_decoder_dim      = 512
+hidden_decoder_dim      = 512 
 index2word              = dr.get_ind2word()
 visual_features_dim     = 4096
 decoder_model_path      = 'Models/bin/dec'
@@ -134,7 +134,6 @@ print("Valid game ids done. Number of valid games: ", len(game_ids))
 game_ids_val = list(np.random.choice(game_ids, int(train_val_ratio*len(game_ids))))
 game_ids_train = [gid for gid in game_ids if gid not in game_ids_val]
 
-
 for epoch in range(iterations):
     print("Epoch: ", epoch)
     start = time()
@@ -149,6 +148,7 @@ for epoch in range(iterations):
     batches = create_batches(game_ids_train, batch_size)
     batches_val = create_batches(game_ids_val, batch_size) # TODO: Do entire set later
 
+    batchFlag = False
     for batch in np.vstack([batches, batches_val]):
         train_batch = batch in batches
         start_batch = time()
@@ -253,14 +253,15 @@ for epoch in range(iterations):
 
             if logging:
                 for gid in batch:
-                    if gid in game_ids_train[::7000] + game_ids_val[::2500]:
+                    if gid in [6,5000,15000,50000] and epoch>1 and epoch%2 == 0:
+                        batchFlag = True
                         with open(output_file, 'a') as out:
                             out.write("%03d, %i, %i, %i, %s\n" %(epoch, gid, qn, gid in game_ids_train[::2], produced_questions[-1]))
 
         # del encoder_batch_matrix
         # del decoder_batch_matrix
+        batchFlag = False
         print("Batchtime %f" %(time()-start_batch))
-
 
 
 
