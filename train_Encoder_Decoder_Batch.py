@@ -156,7 +156,7 @@ for epoch in range(iterations):
         encoder_model.hidden_encoder = encoder_model.init_hidden(train_batch)
         
         # get the questions and the visual features of the current game
-                visual_features_batch = get_batch_visual_features(dr, batch, visual_features_dim)
+        visual_features_batch = get_batch_visual_features(dr, batch, visual_features_dim)
 
         encoder_batch_matrix, decoder_batch_matrix, max_n_questions, target_lengths \
             = create_batch_from_games(dr, batch, int(word2index['-PAD-']), length, word2index, train_batch, encoder_game_path, decoder_game_path)
