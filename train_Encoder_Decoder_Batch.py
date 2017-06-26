@@ -61,7 +61,7 @@ teacher_forcing         = False # if TRUE, the decoder input will always be the 
 tf_decay_mode           = 'one-by-epoch-squared'
 train_val_ratio         = 0.1
 save_models             = True
-batch_size              = 64
+batch_size              = 256
 n_games_to_train        = 96000
 
 # save hyperparameters in a file
@@ -151,7 +151,7 @@ for epoch in range(iterations):
 
     for batch in np.vstack([batches, batches_val]):
         train_batch = batch in batches
-
+        start_batch = time()
         # Initiliaze encoder/decoder hidden state with 0
         encoder_model.hidden_encoder = encoder_model.init_hidden(train_batch)
         
@@ -260,6 +260,7 @@ for epoch in range(iterations):
 
         # del encoder_batch_matrix
         # del decoder_batch_matrix
+        print("Batchtime %f" %(time()-start_batch))
 
 
 
