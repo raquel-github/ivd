@@ -128,9 +128,6 @@ def train():
         # Loop over batches
         for batch in np.vstack([batches, batches_val]):
 
-            # Reset the optimizer gradient
-            optimizer.zero_grad()
-
             # Save statistics about the images
             corresponding_gids = []
             processed_questions = []
@@ -187,6 +184,13 @@ def train():
             else:
                 answer = Variable(torch.LongTensor(processed_answers))
 
+
+            print (output)
+
+            print ("-------------------------------")
+
+            print(answer)
+
             # Calculate the loss
             cost = loss(output, answer)
 
@@ -199,9 +203,9 @@ def train():
                 oracle_epoch_loss = torch.cat([oracle_epoch_loss, cost.data])
     
             # Backpropogate Errors TODO: DOES NOT WORK YET :(
-            optimizer.zero_grad() 
-            cost.backward()
             optimizer.step()
+            cost.backward()
+            optimizer.zero_grad() 
 
         print("time:" + str(time()-start) + " \n Loss:" + str(torch.mean(oracle_epoch_loss)))
         print("Validation loss: " + str(torch.mean(oracle_epoch_loss_valid)))
