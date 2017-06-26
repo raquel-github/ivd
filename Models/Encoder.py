@@ -97,6 +97,10 @@ class EncoderBatch(Encoder):
 
     def forward(self, sentence_batch):
         """ freivn """
+        if use_cuda:
+            sentence_batch = Variable(sentence_batch).cuda()
+        else:
+            sentence_batch = Variable(sentence_batch)
         sentence_batch_embedding = self.word_embeddings(sentence_batch)
         #packed = torch.nn.utils.rnn.pack_padded_sequence(sentence_batch_embedding, input_lengths)
         encoder_out, self.hidden_encoder = self.encoder_lstm(sentence_batch_embedding, self.hidden_encoder)

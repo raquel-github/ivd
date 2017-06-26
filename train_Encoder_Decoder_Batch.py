@@ -153,23 +153,12 @@ for epoch in range(iterations):
 
         # Initiliaze encoder/decoder hidden state with 0
         encoder_model.hidden_encoder = encoder_model.init_hidden(train_batch)
+        # encoder_hidden_state = encoder_model.init_hidden(train_batch)
 
-        # get the questions and the visual features of the current game
-        visual_features_batch = get_batch_visual_features(dr, batch, visual_features_dim)
 
         encoder_batch_matrix, decoder_batch_matrix, max_n_questions, target_lengths \
             = create_batch_from_games(dr, batch, int(word2index['-PAD-']), length, word2index, train_batch, encoder_game_path, decoder_game_path)
 
-        if train_batch:
-            if use_cuda:
-                decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size)).cuda()
-            else:
-                decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size))
-        else:
-            if use_cuda:
-                decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size), volatile=True).cuda()
-            else:
-                decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size), volatile=True)
 
         for qn in range(max_n_questions):
 
@@ -179,12 +168,27 @@ for epoch in range(iterations):
 
             encoder_out, encoder_hidden_state = encoder_model(encoder_batch_matrix[qn])
 
+
             decoder_loss = 0
             decoder_loss_vali = 0
 
             produced_questions = [''] * batch_size
 
+            if train_batch:
+                if use_cuda:
+                        decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size)).cuda()
+                else:
+                    decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size))
+            else:
+                if use_cuda:
+                    decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size), volatile=True).cuda()
+                else:
+                    decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size), volatile=True)
+
             for t in range(length):
+
+                 # get the questions and the visual features of the current game
+                visual_features_batch = get_batch_visual_features(dr, batch, visual_features_dim)
 
                 if t == 0:
                     if use_cuda:
@@ -207,16 +211,21 @@ for epoch in range(iterations):
 
 
             if train_batch:
+                if use_cuda:
+                    decoder_target = Variable(decoder_batch_matrix[qn]).cuda()
+                else:
+                    decoder_target = Variable(decoder_batch_matrix[qn])
+
                 decoder_loss = masked_cross_entropy(decoder_outputs.transpose(0,1).contiguous(), \
-                    decoder_batch_matrix[qn].transpose(0,1).contiguous(),\
+                    decoder_target.transpose(0,1).contiguous(),\
                     target_lengths[qn])
 
 
-                decoder_loss.backward(retain_variables=True)
+                decoder_loss.backward(retain_variables=False)
 
                 # clip gradients to prevent gradient explosion
-                nn.utils.clip_grad_norm(encoder_model.parameters(), max_norm=grad_clip)
-                nn.utils.clip_grad_norm(decoder_model.parameters(), max_norm=grad_clip)
+                # nn.utils.clip_grad_norm(encoder_model.parameters(), max_norm=grad_clip)
+                # nn.utils.clip_grad_norm(decoder_model.parameters(), max_norm=grad_clip)
 
                 encoder_optimizer.step()
                 decoder_optimizer.step()
@@ -227,8 +236,13 @@ for epoch in range(iterations):
 
 
             else: # vali batch
+                if use_cuda:
+                    decoder_target = Variable(decoder_batch_matrix[qn]).cuda()
+                else:
+                    decoder_target = Variable(decoder_batch_matrix[qn])
+
                 decoder_loss_vali = masked_cross_entropy(decoder_outputs.transpose(0,1).contiguous(), \
-                    decoder_batch_matrix[qn].transpose(0,1).contiguous(),\
+                    decoder_target.transpose(0,1).contiguous(),\
                     target_lengths[qn])
 
                 #print("Valid Loss %.2f" %(decoder_loss_vali.data[0]))
@@ -236,7 +250,7 @@ for epoch in range(iterations):
                 decoder_epoch_loss_validation = torch.cat([decoder_epoch_loss_validation, decoder_loss_vali.data])
 
 
-            if True:
+            if logging:
                 for gid in batch:
                     if gid in game_ids_train[::2] + game_ids_val[::2]:
                         with open(output_file, 'a') as out:
