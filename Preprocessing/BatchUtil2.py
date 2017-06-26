@@ -138,9 +138,9 @@ def create_batch_from_games(dr, game_ids, pad_token, length, word2index, train_b
 def get_batch_visual_features(dr, game_ids, visual_features_dim):
     """ given a list of game_ids, returns the visual features of the games """
     if use_cuda:
-        visual_features_batch = Variable(torch.zeros(len(game_ids), visual_features_dim),requires_grad= False).cuda()
+        visual_features_batch = Variable(torch.zeros(len(game_ids), visual_features_dim),volatile=True).cuda()
     else:
-        visual_features_batch = Variable(torch.zeros(len(game_ids), visual_features_dim),requires_grad= False)
+        visual_features_batch = Variable(torch.zeros(len(game_ids), visual_features_dim),volatile=True)
 
     for i, gid in enumerate(game_ids):
         visual_features_batch[i] = torch.Tensor(dr.get_image_features(gid))
