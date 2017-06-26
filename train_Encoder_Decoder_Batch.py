@@ -59,9 +59,9 @@ grad_clip               = 50.
 teacher_forcing         = False # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
 tf_decay_mode           = 'one-by-epoch-squared'
 train_val_ratio         = 0.1
-save_models             = True
-batch_size              = 2
-n_games_to_train        = 20
+save_models             = False
+batch_size              = 16
+n_games_to_train        = 160
 
 # save hyperparameters in a file
 if logging:
@@ -188,9 +188,9 @@ for epoch in range(iterations):
 
                 if t == 0:
                     if use_cuda:
-                        sos_embedding = encoder_model.word_embeddings(Variable(torch.LongTensor([int(word2index['-SOS-'])]*batch_size)).cuda())
+                        sos_embedding = encoder_model.word_embeddings(Variable(torch.LongTensor([int(word2index['-SOS-'])]*batch_size),requires_grad=False).cuda())
                     else:
-                        sos_embedding = encoder_model.word_embeddings(Variable(torch.LongTensor([int(word2index['-SOS-'])]*batch_size)))
+                        sos_embedding = encoder_model.word_embeddings(Variable(torch.LongTensor([int(word2index['-SOS-'])]*batch_size),requires_grad=False))
 
                     decoder_out = decoder_model(visual_features_batch, encoder_hidden_state, sos_embedding)
 
@@ -212,7 +212,7 @@ for epoch in range(iterations):
                     target_lengths[qn])
 
 
-                decoder_loss.backward()
+                decoder_loss.backward(retain_variables=True)
 
                 # clip gradients to prevent gradient explosion
                 nn.utils.clip_grad_norm(encoder_model.parameters(), max_norm=grad_clip)
@@ -236,11 +236,14 @@ for epoch in range(iterations):
                 decoder_epoch_loss_validation = torch.cat([decoder_epoch_loss_validation, decoder_loss_vali.data])
 
 
-            if logging:
+            if True:
                 for gid in batch:
                     if gid in game_ids_train[::2] + game_ids_val[::2]:
                         with open(output_file, 'a') as out:
                             out.write("%03d, %i, %i, %i, %s\n" %(epoch, gid, qn, gid in game_ids_train[::2], produced_questions))
+
+        # del encoder_batch_matrix
+        # del decoder_batch_matrix
 
 
 
