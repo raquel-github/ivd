@@ -10,6 +10,7 @@ from random import shuffle
 import datetime
 import pickle
 import os.path
+from copy import deepcopy
 
 import torch
 import torch.nn as nn
@@ -34,18 +35,18 @@ dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_path=im
 ### Hyperparemters
 # General
 length                  = 11
-logging                 = False
+logging                 = True
 
 # Encoder
 word2index              = dr.get_word2ind()
 vocab_size              = len(word2index)
-word_embedding_dim      = 128
-hidden_encoder_dim      = 128
+word_embedding_dim      = 512
+hidden_encoder_dim      = 512
 encoder_model_path      = 'Models/bin/enc'
 encoder_game_path       = 'Preprocessing/preprocessed_games/gameid2matrix_encoder.p'
 
 # Decoder
-hidden_decoder_dim      = 128
+hidden_decoder_dim      = 512
 index2word              = dr.get_ind2word()
 visual_features_dim     = 4096
 decoder_model_path      = 'Models/bin/dec'
@@ -59,9 +60,9 @@ grad_clip               = 50.
 teacher_forcing         = False # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
 tf_decay_mode           = 'one-by-epoch-squared'
 train_val_ratio         = 0.1
-save_models             = False
-batch_size              = 16
-n_games_to_train        = 160
+save_models             = True
+batch_size              = 64
+n_games_to_train        = 96000
 
 # save hyperparameters in a file
 if logging:
@@ -104,20 +105,20 @@ decoder_optimizer = optim.Adam(decoder_model.parameters(), decoder_lr)
 
 # Get all the games which have been successful
 
-if not os.path.isfile('test_game_ids.p'):
-    _game_ids = get_game_ids_with_max_length(dr, length)
-    game_ids = list()
-    # get only successful games
-    for _gid in _game_ids:
-        if dr.get_success(_gid) == 1:
-            if len(game_ids) < n_games_to_train:
-                game_ids.append(_gid)
-            else:
-                break
+# if not os.path.isfile('test_game_ids.p'):
+_game_ids = get_game_ids_with_max_length(dr, length)
+game_ids = list()
+# get only successful games
+for _gid in _game_ids:
+    if dr.get_success(_gid) == 1:
+        if len(game_ids) < n_games_to_train:
+            game_ids.append(_gid)
+        else:
+            break
 
-    pickle.dump(game_ids, open('test_game_ids.p', 'wb'))
-else:
-    game_ids = pickle.load(open('test_game_ids.p', 'rb'))
+    # pickle.dump(game_ids, open('test_game_ids.p', 'wb'))
+# else:
+#     game_ids = pickle.load(open('test_game_ids.p', 'rb'))
 
 
 
@@ -153,8 +154,7 @@ for epoch in range(iterations):
 
         # Initiliaze encoder/decoder hidden state with 0
         encoder_model.hidden_encoder = encoder_model.init_hidden(train_batch)
-        # encoder_hidden_state = encoder_model.init_hidden(train_batch)
-
+        
 
         encoder_batch_matrix, decoder_batch_matrix, max_n_questions, target_lengths \
             = create_batch_from_games(dr, batch, int(word2index['-PAD-']), length, word2index, train_batch, encoder_game_path, decoder_game_path)
@@ -165,8 +165,10 @@ for epoch in range(iterations):
             # Set gradientns back to 0
             encoder_optimizer.zero_grad()
             decoder_optimizer.zero_grad()
+            encoder_model.hidden_encoder = encoder_model.init_hidden(train_batch)
 
-            encoder_out, encoder_hidden_state = encoder_model(encoder_batch_matrix[qn])
+            for qh in range(qn+1):
+                encoder_out, encoder_hidden_state = encoder_model(encoder_batch_matrix[qh])
 
 
             decoder_loss = 0
@@ -176,7 +178,7 @@ for epoch in range(iterations):
 
             if train_batch:
                 if use_cuda:
-                        decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size)).cuda()
+                    decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size)).cuda()
                 else:
                     decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size))
             else:
