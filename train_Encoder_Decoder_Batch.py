@@ -61,7 +61,7 @@ teacher_forcing         = False # if TRUE, the decoder input will always be the 
 tf_decay_mode           = 'one-by-epoch-squared'
 train_val_ratio         = 0.1
 save_models             = True
-batch_size              = 384
+batch_size              = 256
 n_games_to_train        = 96000
 
 # save hyperparameters in a file
@@ -82,6 +82,7 @@ if logging:
         hyp.write("tf_decay_mode %s \n" %(tf_decay_mode))
         hyp.write("train_val_ratio %f \n" %(train_val_ratio))
         hyp.write("save_models %f \n" %(save_models))
+        hyp.write("batch_size %i \n" %(batch_size))
         hyp.write("n_games_to_train %i \n" %(n_games_to_train))
 
 def get_teacher_forcing_p(epoch):
