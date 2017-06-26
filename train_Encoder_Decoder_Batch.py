@@ -8,6 +8,8 @@ import numpy as np
 from time import time
 from random import shuffle
 import datetime
+import pickle
+import os.path
 
 import torch
 import torch.nn as nn
@@ -32,17 +34,18 @@ dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_path=im
 ### Hyperparemters
 # General
 length                  = 11
+logging                 = False
 
 # Encoder
 word2index              = dr.get_word2ind()
 vocab_size              = len(word2index)
-word_embedding_dim      = 256
-hidden_encoder_dim      = 256
+word_embedding_dim      = 128
+hidden_encoder_dim      = 128
 encoder_model_path      = 'Models/bin/enc'
 encoder_game_path       = 'Preprocessing/preprocessed_games/gameid2matrix_encoder.p'
 
 # Decoder
-hidden_decoder_dim      = 256
+hidden_decoder_dim      = 128
 index2word              = dr.get_ind2word()
 visual_features_dim     = 4096
 decoder_model_path      = 'Models/bin/dec'
@@ -57,27 +60,28 @@ teacher_forcing         = False # if TRUE, the decoder input will always be the 
 tf_decay_mode           = 'one-by-epoch-squared'
 train_val_ratio         = 0.1
 save_models             = True
-batch_size              = 16    
-n_games_to_train        = 96000
+batch_size              = 2
+n_games_to_train        = 20
 
 # save hyperparameters in a file
-with open(hyperparameters_file, 'a') as hyp:
-    hyp.write("length %i \n" %(length))
-    hyp.write("word_embedding_dim %i \n" %(word_embedding_dim))
-    hyp.write("hidden_encoder_dim %i \n" %(hidden_encoder_dim))
-    hyp.write("encoder_game_path %s \n" %(encoder_game_path))
-    hyp.write("hidden_decoder_dim %i \n" %(hidden_decoder_dim))
-    hyp.write("visual_features_dim %i \n" %(visual_features_dim))
-    hyp.write("decoder_game_path %s \n" %(decoder_game_path))
-    hyp.write("iterations %i \n" %(iterations))
-    hyp.write("encoder_lr %f \n" %(encoder_lr))
-    hyp.write("decoder_lr %f \n" %(decoder_lr))
-    hyp.write("grad_clip %f \n" %(grad_clip))
-    hyp.write("teacher_forcing %i \n" %(teacher_forcing))
-    hyp.write("tf_decay_mode %s \n" %(tf_decay_mode))
-    hyp.write("train_val_ratio %f \n" %(train_val_ratio))
-    hyp.write("save_models %f \n" %(save_models))
-    hyp.write("n_games_to_train %i \n" %(n_games_to_train))
+if logging:
+    with open(hyperparameters_file, 'a') as hyp:
+        hyp.write("length %i \n" %(length))
+        hyp.write("word_embedding_dim %i \n" %(word_embedding_dim))
+        hyp.write("hidden_encoder_dim %i \n" %(hidden_encoder_dim))
+        hyp.write("encoder_game_path %s \n" %(encoder_game_path))
+        hyp.write("hidden_decoder_dim %i \n" %(hidden_decoder_dim))
+        hyp.write("visual_features_dim %i \n" %(visual_features_dim))
+        hyp.write("decoder_game_path %s \n" %(decoder_game_path))
+        hyp.write("iterations %i \n" %(iterations))
+        hyp.write("encoder_lr %f \n" %(encoder_lr))
+        hyp.write("decoder_lr %f \n" %(decoder_lr))
+        hyp.write("grad_clip %f \n" %(grad_clip))
+        hyp.write("teacher_forcing %i \n" %(teacher_forcing))
+        hyp.write("tf_decay_mode %s \n" %(tf_decay_mode))
+        hyp.write("train_val_ratio %f \n" %(train_val_ratio))
+        hyp.write("save_models %f \n" %(save_models))
+        hyp.write("n_games_to_train %i \n" %(n_games_to_train))
 
 def get_teacher_forcing_p(epoch):
     """ return the probability of appyling teacher forcing at a given epoch """
@@ -99,15 +103,23 @@ encoder_optimizer = optim.Adam(encoder_model.parameters(), encoder_lr)
 decoder_optimizer = optim.Adam(decoder_model.parameters(), decoder_lr)
 
 # Get all the games which have been successful
-_game_ids = get_game_ids_with_max_length(dr, length)
-game_ids = list()
-# get only successful games
-for _gid in _game_ids:
-    if dr.get_success(_gid) == 1:
-        if len(game_ids) < n_games_to_train:
-            game_ids.append(_gid)
-        else:
-            break
+
+if not os.path.isfile('test_game_ids.p'):
+    _game_ids = get_game_ids_with_max_length(dr, length)
+    game_ids = list()
+    # get only successful games
+    for _gid in _game_ids:
+        if dr.get_success(_gid) == 1:
+            if len(game_ids) < n_games_to_train:
+                game_ids.append(_gid)
+            else:
+                break
+
+    pickle.dump(game_ids, open('test_game_ids.p', 'wb'))
+else:
+    game_ids = pickle.load(open('test_game_ids.p', 'rb'))
+
+
 
 print("Valid game ids done. Number of valid games: ", len(game_ids))
 
@@ -179,7 +191,7 @@ for epoch in range(iterations):
                         sos_embedding = encoder_model.word_embeddings(Variable(torch.LongTensor([int(word2index['-SOS-'])]*batch_size)).cuda())
                     else:
                         sos_embedding = encoder_model.word_embeddings(Variable(torch.LongTensor([int(word2index['-SOS-'])]*batch_size)))
-                        
+
                     decoder_out = decoder_model(visual_features_batch, encoder_hidden_state, sos_embedding)
 
                 else:
@@ -200,7 +212,7 @@ for epoch in range(iterations):
                     target_lengths[qn])
 
 
-                decoder_loss.backward(retain_variables=True)
+                decoder_loss.backward()
 
                 # clip gradients to prevent gradient explosion
                 nn.utils.clip_grad_norm(encoder_model.parameters(), max_norm=grad_clip)
@@ -224,18 +236,20 @@ for epoch in range(iterations):
                 decoder_epoch_loss_validation = torch.cat([decoder_epoch_loss_validation, decoder_loss_vali.data])
 
 
-            for gid in batch:
-                if gid in game_ids_train[::2] + game_ids_val[::2]:
-                    with open(output_file, 'a') as out:
-                        out.write("%03d, %i, %i, %i, %s\n" %(epoch, gid, qn, gid in game_ids_train[::2], produced_questions))
+            if logging:
+                for gid in batch:
+                    if gid in game_ids_train[::2] + game_ids_val[::2]:
+                        with open(output_file, 'a') as out:
+                            out.write("%03d, %i, %i, %i, %s\n" %(epoch, gid, qn, gid in game_ids_train[::2], produced_questions))
 
 
 
 
     print("Epoch %03d, Time taken %.2f, Training-Loss %.5f, Validation-Loss %.5f" %(epoch, time()-start,torch.mean(decoder_epoch_loss), torch.mean(decoder_epoch_loss_validation)))
     # write loss
-    with open(loss_file, 'a') as out:
-        out.write("%f, %f \n" %(torch.mean(decoder_epoch_loss), torch.mean(decoder_epoch_loss_validation)))
+    if logging:
+        with open(loss_file, 'a') as out:
+            out.write("%f, %f \n" %(torch.mean(decoder_epoch_loss), torch.mean(decoder_epoch_loss_validation)))
 
 print("Training completed.")
 
