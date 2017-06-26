@@ -122,7 +122,10 @@ class OracleBatch(Oracle):
     def forward(self, question, spatial, object_class, crop, image, num):
 
         # Save the result for all qa pairs in the batch
-        out = Variable(torch.Tensor(num, 3))
+        if use_cuda:
+            out = Variable(torch.Tensor(num, 3)).cuda()
+        else:
+            out = Variable(torch.Tensor(num, 3))
         
         # Loop over all QA pairs
         for i in range(num):
