@@ -271,10 +271,12 @@ for epoch in range(iterations):
         with open(loss_file, 'a') as out:
             out.write("%f, %f \n" %(torch.mean(decoder_epoch_loss), torch.mean(decoder_epoch_loss_validation)))
 
+    if save_models:
+        torch.save(encoder_model.state_dict(), encoder_model_path)
+        torch.save(decoder_model.state_dict(), decoder_model_path)
+
+        print('Models saved for epoch:', epoch)
+
 print("Training completed.")
 
-if save_models:
-    torch.save(encoder_model.state_dict(), encoder_model_path)
-    torch.save(decoder_model.state_dict(), decoder_model_path)
 
-    print('Models saved.')
