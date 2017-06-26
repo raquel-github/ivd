@@ -56,7 +56,7 @@ class DataReader():
 
     def get_categories_length(self):
         """ return the number of object categories """
-        return len(self.categories)
+        return int(max(self.categories.keys()))
 
     def get_cat2id(self):
         """ return the category to categoryID dictionary """

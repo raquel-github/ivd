@@ -123,7 +123,7 @@ class OracleBatch(Oracle):
     def forward(self, question, spatial, object_class, crop, image, num):
 
         # Save the result for all qa pairs in the batch
-        out = torch.Tensor(num, 3)
+        out = Variable(torch.Tensor(num, 3))
         
         # Loop over all QA pairs
         for i in range(num):
@@ -141,6 +141,8 @@ class OracleBatch(Oracle):
             
             # LSTM pass
             _ , hidden  = self.lstm(encoder_in, self.hidden)
+
+            # print(object_class[i])
 
             # Format data
             object_class_emb = self.obj2embedd(object_class[i])
@@ -164,7 +166,7 @@ class OracleBatch(Oracle):
                 mlp_in = Variable(torch.cat([image_emb, crop_emb, spatial_emb.data, object_class_emb.data, hidden_lstm.data],dim=1))
 
             # MLP pass
-            out[i] = self.mlp(mlp_in).data
+            out[i] = self.mlp(mlp_in)
 
         # Return the results
-        return Variable(out) 
+        return out

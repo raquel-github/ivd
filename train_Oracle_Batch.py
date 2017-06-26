@@ -97,8 +97,8 @@ def train():
     optimizer = optim.Adam(model.parameters(), lr=0.00001)
 
     # Get the game IDs
-    # gameids = dr.get_game_ids()
-    gameids = range(53)
+    gameids = dr.get_game_ids()
+    # gameids = range(53)
 
     # Split games in validation and training set
     gameids_val = list(np.random.choice(gameids, int(train_val_ratio*len(gameids))))
@@ -184,17 +184,8 @@ def train():
             else:
                 answer = Variable(torch.LongTensor(processed_answers))
 
-
-            print (output)
-
-            print ("-------------------------------")
-
-            print(answer)
-
             # Calculate the loss
             cost = loss(output, answer)
-
-            print(cost)
 
             # Check if we need to include this loss in the training or validation loss
             if batch[0] in gameids_val:
