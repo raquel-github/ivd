@@ -13,7 +13,6 @@ import h5py
 use_cuda = torch.cuda.is_available()
 
 class Oracle(nn.Module):
-
     # hidden_dim: Dimensionality of output of LSTM block.
     # embedding_dim: (inputsize LSTM)
     # d_in: De lengte van de totale inputvector (MLP)

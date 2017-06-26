@@ -10,6 +10,7 @@ from random import shuffle
 import datetime
 import pickle
 import os.path
+from copy import deepcopy
 
 import torch
 import torch.nn as nn
@@ -34,18 +35,18 @@ dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_path=im
 ### Hyperparemters
 # General
 length                  = 11
-logging                 = False
+logging                 = True
 
 # Encoder
 word2index              = dr.get_word2ind()
 vocab_size              = len(word2index)
-word_embedding_dim      = 128
-hidden_encoder_dim      = 128
+word_embedding_dim      = 512
+hidden_encoder_dim      = 512
 encoder_model_path      = 'Models/bin/enc'
 encoder_game_path       = 'Preprocessing/preprocessed_games/gameid2matrix_encoder.p'
 
 # Decoder
-hidden_decoder_dim      = 128
+hidden_decoder_dim      = 512 
 index2word              = dr.get_ind2word()
 visual_features_dim     = 4096
 decoder_model_path      = 'Models/bin/dec'
@@ -54,14 +55,14 @@ decoder_game_path       = 'Preprocessing/preprocessed_games/gameid2matrix_decode
 # Training
 iterations              = 100
 encoder_lr              = 0.0001
-decoder_lr              = 0.0005
+decoder_lr              = 0.0001
 grad_clip               = 50.
 teacher_forcing         = False # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
 tf_decay_mode           = 'one-by-epoch-squared'
 train_val_ratio         = 0.1
-save_models             = False
-batch_size              = 16
-n_games_to_train        = 160
+save_models             = True
+batch_size              = 256
+n_games_to_train        = 96000
 
 # save hyperparameters in a file
 if logging:
@@ -81,6 +82,7 @@ if logging:
         hyp.write("tf_decay_mode %s \n" %(tf_decay_mode))
         hyp.write("train_val_ratio %f \n" %(train_val_ratio))
         hyp.write("save_models %f \n" %(save_models))
+        hyp.write("batch_size %i \n" %(batch_size))
         hyp.write("n_games_to_train %i \n" %(n_games_to_train))
 
 def get_teacher_forcing_p(epoch):
@@ -133,7 +135,6 @@ print("Valid game ids done. Number of valid games: ", len(game_ids))
 game_ids_val = list(np.random.choice(game_ids, int(train_val_ratio*len(game_ids))))
 game_ids_train = [gid for gid in game_ids if gid not in game_ids_val]
 
-
 for epoch in range(iterations):
     print("Epoch: ", epoch)
     start = time()
@@ -148,41 +149,46 @@ for epoch in range(iterations):
     batches = create_batches(game_ids_train, batch_size)
     batches_val = create_batches(game_ids_val, batch_size) # TODO: Do entire set later
 
+    batchFlag = False
     for batch in np.vstack([batches, batches_val]):
         train_batch = batch in batches
-
+        start_batch = time()
         # Initiliaze encoder/decoder hidden state with 0
         encoder_model.hidden_encoder = encoder_model.init_hidden(train_batch)
-
+        
         # get the questions and the visual features of the current game
         visual_features_batch = get_batch_visual_features(dr, batch, visual_features_dim)
 
         encoder_batch_matrix, decoder_batch_matrix, max_n_questions, target_lengths \
             = create_batch_from_games(dr, batch, int(word2index['-PAD-']), length, word2index, train_batch, encoder_game_path, decoder_game_path)
 
-        if train_batch:
-            if use_cuda:
-                decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size)).cuda()
-            else:
-                decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size))
-        else:
-            if use_cuda:
-                decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size), volatile=True).cuda()
-            else:
-                decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size), volatile=True)
 
         for qn in range(max_n_questions):
 
             # Set gradientns back to 0
             encoder_optimizer.zero_grad()
             decoder_optimizer.zero_grad()
+            encoder_model.hidden_encoder = encoder_model.init_hidden(train_batch)
 
-            encoder_out, encoder_hidden_state = encoder_model(encoder_batch_matrix[qn])
+            for qh in range(qn+1):
+                encoder_out, encoder_hidden_state = encoder_model(encoder_batch_matrix[qh])
+
 
             decoder_loss = 0
             decoder_loss_vali = 0
 
             produced_questions = [''] * batch_size
+
+            if train_batch:
+                if use_cuda:
+                    decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size)).cuda()
+                else:
+                    decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size))
+            else:
+                if use_cuda:
+                    decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size), volatile=True).cuda()
+                else:
+                    decoder_outputs = Variable(torch.zeros(length, batch_size, vocab_size), volatile=True)
 
             for t in range(length):
 
@@ -207,16 +213,21 @@ for epoch in range(iterations):
 
 
             if train_batch:
+                if use_cuda:
+                    decoder_target = Variable(decoder_batch_matrix[qn]).cuda()
+                else:
+                    decoder_target = Variable(decoder_batch_matrix[qn])
+
                 decoder_loss = masked_cross_entropy(decoder_outputs.transpose(0,1).contiguous(), \
-                    decoder_batch_matrix[qn].transpose(0,1).contiguous(),\
+                    decoder_target.transpose(0,1).contiguous(),\
                     target_lengths[qn])
 
 
-                decoder_loss.backward(retain_variables=True)
+                decoder_loss.backward(retain_variables=False)
 
                 # clip gradients to prevent gradient explosion
-                nn.utils.clip_grad_norm(encoder_model.parameters(), max_norm=grad_clip)
-                nn.utils.clip_grad_norm(decoder_model.parameters(), max_norm=grad_clip)
+                # nn.utils.clip_grad_norm(encoder_model.parameters(), max_norm=grad_clip)
+                # nn.utils.clip_grad_norm(decoder_model.parameters(), max_norm=grad_clip)
 
                 encoder_optimizer.step()
                 decoder_optimizer.step()
@@ -227,8 +238,13 @@ for epoch in range(iterations):
 
 
             else: # vali batch
+                if use_cuda:
+                    decoder_target = Variable(decoder_batch_matrix[qn]).cuda()
+                else:
+                    decoder_target = Variable(decoder_batch_matrix[qn])
+
                 decoder_loss_vali = masked_cross_entropy(decoder_outputs.transpose(0,1).contiguous(), \
-                    decoder_batch_matrix[qn].transpose(0,1).contiguous(),\
+                    decoder_target.transpose(0,1).contiguous(),\
                     target_lengths[qn])
 
                 #print("Valid Loss %.2f" %(decoder_loss_vali.data[0]))
@@ -236,15 +252,17 @@ for epoch in range(iterations):
                 decoder_epoch_loss_validation = torch.cat([decoder_epoch_loss_validation, decoder_loss_vali.data])
 
 
-            if True:
+            if logging:
                 for gid in batch:
-                    if gid in game_ids_train[::2] + game_ids_val[::2]:
+                    if gid in [6,5000,15000,50000] and epoch>1 and epoch%2 == 0:
+                        batchFlag = True
                         with open(output_file, 'a') as out:
-                            out.write("%03d, %i, %i, %i, %s\n" %(epoch, gid, qn, gid in game_ids_train[::2], produced_questions))
+                            out.write("%03d, %i, %i, %i, %s\n" %(epoch, gid, qn, gid in game_ids_train[::2], produced_questions[-1]))
 
         # del encoder_batch_matrix
         # del decoder_batch_matrix
-
+        batchFlag = False
+        print("Batchtime %f" %(time()-start_batch))
 
 
 
@@ -254,10 +272,12 @@ for epoch in range(iterations):
         with open(loss_file, 'a') as out:
             out.write("%f, %f \n" %(torch.mean(decoder_epoch_loss), torch.mean(decoder_epoch_loss_validation)))
 
+    if save_models:
+        torch.save(encoder_model.state_dict(), encoder_model_path)
+        torch.save(decoder_model.state_dict(), decoder_model_path)
+
+        print('Models saved for epoch:', epoch)
+
 print("Training completed.")
 
-if save_models:
-    torch.save(encoder_model.state_dict(), encoder_model_path)
-    torch.save(decoder_model.state_dict(), decoder_model_path)
 
-    print('Models saved.')
