@@ -105,20 +105,20 @@ decoder_optimizer = optim.Adam(decoder_model.parameters(), decoder_lr)
 
 # Get all the games which have been successful
 
-# if not os.path.isfile('test_game_ids.p'):
-_game_ids = get_game_ids_with_max_length(dr, length)
-game_ids = list()
-# get only successful games
-for _gid in _game_ids:
-    if dr.get_success(_gid) == 1:
-        if len(game_ids) < n_games_to_train:
-            game_ids.append(_gid)
-        else:
-            break
+if not os.path.isfile('test_game_ids.p'):
+    _game_ids = get_game_ids_with_max_length(dr, length)
+    game_ids = list()
+    # get only successful games
+    for _gid in _game_ids:
+        if dr.get_success(_gid) == 1:
+            if len(game_ids) < n_games_to_train:
+                game_ids.append(_gid)
+            else:
+                break
 
-    # pickle.dump(game_ids, open('test_game_ids.p', 'wb'))
-# else:
-#     game_ids = pickle.load(open('test_game_ids.p', 'rb'))
+    pickle.dump(game_ids, open('test_game_ids.p', 'wb'))
+else:
+    game_ids = pickle.load(open('test_game_ids.p', 'rb'))
 
 
 
@@ -253,9 +253,9 @@ for epoch in range(iterations):
 
             if logging:
                 for gid in batch:
-                    if gid in game_ids_train[::2] + game_ids_val[::2]:
+                    if gid in game_ids_train[::7000] + game_ids_val[::2500]:
                         with open(output_file, 'a') as out:
-                            out.write("%03d, %i, %i, %i, %s\n" %(epoch, gid, qn, gid in game_ids_train[::2], produced_questions))
+                            out.write("%03d, %i, %i, %i, %s\n" %(epoch, gid, qn, gid in game_ids_train[::2], produced_questions[-1]))
 
         # del encoder_batch_matrix
         # del decoder_batch_matrix
