@@ -56,3 +56,11 @@ Preprocessing/Data/preprocessed.h5
 logs/*
 
 Models/bin/*
+
+q_lengths.p
+
+test_game_ids_200.p
+
+test_game_ids_541.p
+
+test_game_ids_splitting.p
