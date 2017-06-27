@@ -63,7 +63,7 @@ grad_clip               = 50.
 teacher_forcing         = False # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
 tf_decay_mode           = 'one-by-epoch-squared'
 train_val_ratio         = 0.1
-batch_size              = 2 if my_sys else 256
+batch_size              = 2 if my_sys else 200
 n_games_to_train        = 20 if my_sys else 96000
 
 # save hyperparameters in a file
@@ -144,7 +144,7 @@ for epoch in range(iterations):
 
     # reshuffle training batches in every epoch
     batches = create_batches(game_ids_train, batch_size)
-    batches_val = create_batches(game_ids_val, batch_size) # TODO: Do entire set later
+    batches_val = create_batches(game_ids_val, batch_size)
 
     batchFlag = False
     batch_number = 0
@@ -258,7 +258,7 @@ for epoch in range(iterations):
         # del encoder_batch_matrix
         # del decoder_batch_matrix
         batchFlag = False
-        print("Epoch %i, Batch Number %i, Batchtime %f" %(epoch, batch_number, time()-start_batch))
+        print("Epoch %03d, Batch Number %03d, Batchtime %.2f" %(epoch, batch_number, time()-start_batch))
         batch_number += 1
 
 
