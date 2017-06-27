@@ -23,7 +23,7 @@ class Guesser(nn.Module):
         self.hidden_encoder_dim = hidden_encoder_dim
         self.cat2id = cat2id
 
-        self.object_embedding_model = nn.Embedding(self.categories_length, self.object_embedding_dim)
+        self.object_embeddings = nn.Embedding(self.categories_length, self.object_embedding_dim)
 
         self.mlp_model = nn.Sequential(
             nn.Linear(self.object_embedding_dim + self.spatial_dim, 64),
@@ -79,10 +79,12 @@ class Guesser(nn.Module):
     def forward(self, hidden_encoder, img_meta, object_categories):
 
         # get the object embeddings of the objects in the image
+        obj_embeddings = self.object_embeddings(Variable(torch.LongTensor(object_categories)))
+        """
         object_embeddings = Variable(torch.zeros(len(object_categories), self.object_embedding_dim))
         for i, obj in enumerate(object_categories):
-            obj_embeddings[i] = self.object_embedding_model(obj)
-
+            obj_embeddings[i] = self.object_embeddings(obj)
+        """
         # get the spatial info
         spatial = img_spatial(img_meta)
 

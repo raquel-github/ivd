@@ -129,6 +129,9 @@ for epoch in range(iterations):
 	batchFlag = False
 	batch_number = 0
 
+	guesser_loss = 0
+	decider_loss = 0
+
 	for batch in np.vstack([batches, batches_val]):
 		train_batch = batch in batches
 		start_batch = time()
@@ -140,7 +143,7 @@ for epoch in range(iterations):
 		decisions = Variable(torch.ones(batch_size) * -1)
 
 		question_number = 0
-		saved_encoder_hidden_states = torch.zeros(length+1, batch_size, encoder_hidden_dim)
+		saved_encoder_hidden_states = torch.zeros(batch_size, hidden_encoder_dim)
 		saved_encoder_hidden_bool = [False] * batch_size
 
 		while (decisions.data.numpy() < 0.5).all() == True: # check whether the decider made the decision to guess for all games
@@ -149,19 +152,19 @@ for epoch in range(iterations):
 
 			if question_number == 0:
 				_, encoder_hidden_state = encoder_model(padded_sos, visual_features_batch)
-				decisions = decider_model(encoder_hidden_state)
+				decisions = decider_model(encoder_hidden_state[0])
 			else:
 				_, encoder_hidden_state = encoder_model(seq_wid, visual_features_batch)
 
 				for d_id, d_val in enumerate(decisions):
 					if d_val < 0.5:
-						decisions[d_id] = decider_model(encoder_hidden_state[:,d_id,:])
+						decisions[d_id] = decider_model(encoder_hidden_state[0][0,d_id].view(1,1,-1))
 
 
 			# save the hidden states for games where the decision to guess has been made
 			for did, deci in enumerate(decisions):
 				if deci > 0.5 and saved_encoder_hidden_bool[did] == False:
-					saved_encoder_hidden_states[:,did,:] = encoder_hidden_state[:,did,:]
+					saved_encoder_hidden_states[did] = encoder_hidden_state[0].data[0,did]
 					saved_encoder_hidden_bool[did] = True
 
 
@@ -180,12 +183,36 @@ for epoch in range(iterations):
 
 			question_number += 1
 
-		# guess
-		
 
-		# calcualte loss
+		for i, gid in enumerate(batch):
+			# Data required for the guesser
+			img_meta 			= dr.get_image_meta(gid)
+			object_categories 	= dr.get_category_id(gid)
+			object_ids 			= dr.get_object_ids(gid)
+			# get guesser target object
+			correct_obj_id  	= dr.get_target_object(gid)
+			target_guess 		= object_ids.index(correct_obj_id)
 
-		# backprop
+			guess = guesser_model(saved_encoder_hidden_states[i], img_meta, object_categories)
+
+			_, guess_id = guess.data.topk(1)
+			guess_id 	= guess_id[0][0]
+
+			guesser_loss += guesser_loss_function(guess,target_guess)
+			decider_loss += decider_loss_function(decisions[i], 1 if guess_id == target_guess else 0)
+
+		print(guesser_loss)
+		print(decider_loss)
+
+		guesser_loss.backward()
+		decider_loss.backward()
+
+		guesser_optimizer.step()
+		decider_optimizer.step()
+
+			#guesser_epoch_loss = torch.cat([guesser_epoch_loss, guesser_loss.data])
+			#decider_epoch_loss = torch.cat([decider_epoch_loss, decider_loss.data])
+
 
 		batch_number += 1
 
