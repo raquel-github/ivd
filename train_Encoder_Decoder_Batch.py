@@ -54,10 +54,10 @@ decoder_game_path       = 'Preprocessing/preprocessed_games/gameid2matrix_decode
 
 # Training
 iterations              = 100
-encoder_lr              = 0.00001
-decoder_lr              = 0.00001
+encoder_lr              = 0.0001
+decoder_lr              = 0.0001
 grad_clip               = 50.
-teacher_forcing         = True # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
+teacher_forcing         = False # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
 tf_decay_mode           = 'one-by-epoch-squared'
 train_val_ratio         = 0.1
 save_models             = True
@@ -150,6 +150,7 @@ for epoch in range(iterations):
     batches_val = create_batches(game_ids_val, batch_size) # TODO: Do entire set later
 
     batchFlag = False
+    batch_number = 0
     for batch in np.vstack([batches, batches_val]):
         train_batch = batch in batches
         start_batch = time()
@@ -262,7 +263,8 @@ for epoch in range(iterations):
         # del encoder_batch_matrix
         # del decoder_batch_matrix
         batchFlag = False
-        print("Batchtime %f" %(time()-start_batch))
+        print("Epoch %i, Batch Number %i, Batchtime %f" %(epoch, batch_number, time()-start_batch))
+        batch_number += 1
 
 
 
@@ -273,8 +275,8 @@ for epoch in range(iterations):
             out.write("%f, %f \n" %(torch.mean(decoder_epoch_loss), torch.mean(decoder_epoch_loss_validation)))
 
     if save_models:
-        torch.save(encoder_model.state_dict(), encoder_model_path)
-        torch.save(decoder_model.state_dict(), decoder_model_path)
+        torch.save(encoder_model.state_dict(), encoder_model_path + ts +'_'+ str(epoch))
+        torch.save(decoder_model.state_dict(), decoder_model_path + ts +'_'+ str(epoch))
 
         print('Models saved for epoch:', epoch)
 
