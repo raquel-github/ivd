@@ -64,7 +64,7 @@ def train():
 
     visual_len = 4096
     object_len = 4096 
-    categories_length = dr.get_categories_length()
+    categories_length = dr.get_categories_length() + 1
     spatial_len = 8
     embedding_dim = 512
     word2index = dr.get_word2ind()
