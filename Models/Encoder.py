@@ -120,10 +120,16 @@ class EncoderBatch(Encoder):
 
         sentence_batch_embedding = self.word_embeddings(sentence_batch)
 
-        visual_featues_batch_words = Variable(torch.zeros(self.length+1, self.batch_size, self.visual_features_dim))
+        if use_cuda:
+            visual_featues_batch_words = Variable(torch.zeros(self.length+1, self.batch_size, self.visual_features_dim)).cuda()
+        else:
+            visual_featues_batch_words = Variable(torch.zeros(self.length+1, self.batch_size, self.visual_features_dim))
+            
         for i in range(self.length+1):
             visual_featues_batch_words[i] = visual_features_batch
 
+        print(sentence_batch_embedding.size())
+        print(visual_featues_batch_words.size())
 
         encoder_in = torch.cat([sentence_batch_embedding, visual_featues_batch_words], dim=2)
 
