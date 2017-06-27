@@ -29,6 +29,7 @@ class Encoder(nn.Module):
         self.hidden_encoder_dim = hidden_encoder_dim
         self.batch_size = batch_size
 
+
         # Word embedding Training Model
         if use_cuda:
             self.word_embeddings = nn.Embedding(vocab_size, word_embedding_dim).cuda()
@@ -68,7 +69,13 @@ class Encoder(nn.Module):
         else:
             return self.word_embeddings(Variable(torch.LongTensor([self.word2index[w]])))
 
-    def forward(self, sentence):
+    def get_sos_embedding(self, use_cuda):
+        if use_cuda:
+            return self.word_embeddings(Variable(torch.LongTensor([int(self.word2index['-SOS-'])]*self.batch_size),requires_grad=False).cuda())
+        else:
+            return self.word_embeddings(Variable(torch.LongTensor([int(self.word2index['-SOS-'])]*self.batch_size),requires_grad=False))
+
+    def forward(self, sentence, visual_features):
 
         # compute the one hot representation of the sentence
         if use_cuda:
@@ -82,6 +89,7 @@ class Encoder(nn.Module):
 
         sentence_embedding = sentence_embedding.view(len(sentence.split()),1,-1)
 
+
         # pass word embeddings through encoder LSTM and get output and hidden state
         encoder_out, self.hidden_encoder = self.encoder_lstm(sentence_embedding, self.hidden_encoder)
 
@@ -90,19 +98,35 @@ class Encoder(nn.Module):
 
 class EncoderBatch(Encoder):
     """docstring for E"""
-    def __init__(self, vocab_size, word_embedding_dim, hidden_encoder_dim, word2index, batch_size):
+    def __init__(self, vocab_size, word_embedding_dim, hidden_encoder_dim, word2index, visual_features_dim, length, batch_size):
         # super(EncoderBatch, self).__init__()
         Encoder.__init__(self,vocab_size, word_embedding_dim, hidden_encoder_dim, word2index, batch_size)
 
+        self.visual_features_dim = visual_features_dim
 
-    def forward(self, sentence_batch):
+        self.encoder_lstm = nn.LSTM(word_embedding_dim+visual_features_dim, hidden_encoder_dim)
+
+        self.length = length
+
+    def forward(self, sentence_batch, visual_features_batch, hidden_state_encoder=None):
         """ freivn """
         if use_cuda:
             sentence_batch = Variable(sentence_batch).cuda()
         else:
             sentence_batch = Variable(sentence_batch)
+
+        if hidden_state_encoder:
+            self.hidden_encoder = hidden_state_encoder
+
         sentence_batch_embedding = self.word_embeddings(sentence_batch)
-        #packed = torch.nn.utils.rnn.pack_padded_sequence(sentence_batch_embedding, input_lengths)
-        encoder_out, self.hidden_encoder = self.encoder_lstm(sentence_batch_embedding, self.hidden_encoder)
+
+        visual_featues_batch_words = Variable(torch.zeros(self.length+1, self.batch_size, self.visual_features_dim))
+        for i in range(self.length+1):
+            visual_featues_batch_words[i] = visual_features_batch
+
+
+        encoder_in = torch.cat([sentence_batch_embedding, visual_featues_batch_words], dim=2)
+
+        encoder_out, self.hidden_encoder = self.encoder_lstm(encoder_in, self.hidden_encoder)
 
         return encoder_out, self.hidden_encoder

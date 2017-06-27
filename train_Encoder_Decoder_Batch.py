@@ -24,7 +24,7 @@ data_path               = "../ivd_data/preprocessed.h5"
 indicies_path           = "../ivd_data/indices.json"
 images_path             = "train2014"
 images_features_path    = "../ivd_data/image_features.h5"
-ts                      = str(datetime.datetime.fromtimestamp(time()).strftime('%Y%m%d%H%M'))
+ts                      = str(datetime.datetime.fromtimestamp(time()).strftime('%Y_%m_%d_%H_%M'))
 output_file             = "logs/output" + ts + ".log"
 loss_file               = "logs/loss" + ts + ".log"
 hyperparameters_file    = "logs/hyperparameters" + ts + ".log"
@@ -36,20 +36,21 @@ dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_path=im
 # General
 length                  = 11
 logging                 = True
+save_models             = True
 
 # Encoder
 word2index              = dr.get_word2ind()
 vocab_size              = len(word2index)
 word_embedding_dim      = 512
 hidden_encoder_dim      = 512
-encoder_model_path      = 'Models/bin/enc'
+encoder_model_path      = 'Models/bin/enc'+ts+'_'
 encoder_game_path       = 'Preprocessing/preprocessed_games/gameid2matrix_encoder.p'
 
 # Decoder
 hidden_decoder_dim      = 512
 index2word              = dr.get_ind2word()
 visual_features_dim     = 4096
-decoder_model_path      = 'Models/bin/dec'
+decoder_model_path      = 'Models/bin/dec'+ts+'_'
 decoder_game_path       = 'Preprocessing/preprocessed_games/gameid2matrix_decoder.p'
 
 # Training
@@ -60,7 +61,6 @@ grad_clip               = 50.
 teacher_forcing         = False # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
 tf_decay_mode           = 'one-by-epoch-squared'
 train_val_ratio         = 0.1
-save_models             = True
 batch_size              = 256
 n_games_to_train        = 96000
 
@@ -92,7 +92,7 @@ def get_teacher_forcing_p(epoch):
     if tf_decay_mode == 'one-by-epoch-squared': return 1/(epoch**2)
 
 
-encoder_model = Encoder(vocab_size, word_embedding_dim, hidden_encoder_dim, word2index, batch_size)
+encoder_model = Encoder(vocab_size, word_embedding_dim, hidden_encoder_dim, word2index, visual_features_dim, length, batch_size)
 decoder_model = Decoder(word_embedding_dim, hidden_decoder_dim, visual_features_dim, vocab_size, batch_size)
 
 if use_cuda:
@@ -106,29 +106,24 @@ decoder_optimizer = optim.Adam(decoder_model.parameters(), decoder_lr)
 
 # Get all the games which have been successful
 
-#if not os.path.isfile('test_game_ids.p') or True:
-_game_ids = get_game_ids_with_max_length(dr, length)
-game_ids = list()
-# get only successful games
-for _gid in _game_ids:
-    if dr.get_success(_gid) == 1:
-        if len(game_ids) < n_games_to_train:
-            game_ids.append(_gid)
-        else:
-            break
+if not os.path.isfile('test_game_ids'+str(n_games_to_train)+'.p'):
+    _game_ids = get_game_ids_with_max_length(dr, length)
+    game_ids = list()
+    # get only successful games
+    for _gid in _game_ids:
+        if dr.get_success(_gid) == 1:
+            if len(game_ids) < n_games_to_train:
+                game_ids.append(_gid)
+            else:
+                break
 
-#    pickle.dump(game_ids, open('test_game_ids.p', 'wb'))
-#else:
-#    game_ids = pickle.load(open('test_game_ids.p', 'rb'))
+    pickle.dump(game_ids, open('test_game_ids'+str(n_games_to_train)+'.p', 'wb'))
+else:
+    game_ids = pickle.load(open('test_game_ids'+str(n_games_to_train)+'.p', 'rb'))
 
 
 
 print("Valid game ids done. Number of valid games: ", len(game_ids))
-
-# while len(game_ids) <= n_games_to_train:
-#     candidate = np.random.choice(_game_ids)
-#     if dr.get_success(candidate) == 1 and candidate not in game_ids:
-#         game_ids.append(candidate)
 
 
 # make training validation split
@@ -172,7 +167,7 @@ for epoch in range(iterations):
             encoder_model.hidden_encoder = encoder_model.init_hidden(train_batch)
 
             for qh in range(qn+1):
-                encoder_out, encoder_hidden_state = encoder_model(encoder_batch_matrix[qh])
+                _, encoder_hidden_state = encoder_model(encoder_batch_matrix[qh], visual_features_batch)
 
 
             decoder_loss = 0
@@ -194,12 +189,10 @@ for epoch in range(iterations):
             for t in range(length):
 
                 if t == 0:
-                    if use_cuda:
-                        sos_embedding = encoder_model.word_embeddings(Variable(torch.LongTensor([int(word2index['-SOS-'])]*batch_size),requires_grad=False).cuda())
-                    else:
-                        sos_embedding = encoder_model.word_embeddings(Variable(torch.LongTensor([int(word2index['-SOS-'])]*batch_size),requires_grad=False))
+                    sos_embedding = encoder_model.get_sos_embedding(use_cuda)
 
                     decoder_out = decoder_model(visual_features_batch, encoder_hidden_state, sos_embedding)
+                    decoder_outputs[t] = decoder_out
 
                 else:
                     decoder_out = decoder_model(visual_features_batch, encoder_hidden_state)
@@ -275,8 +268,8 @@ for epoch in range(iterations):
             out.write("%f, %f \n" %(torch.mean(decoder_epoch_loss), torch.mean(decoder_epoch_loss_validation)))
 
     if save_models:
-        torch.save(encoder_model.state_dict(), encoder_model_path + ts +'_'+ str(epoch))
-        torch.save(decoder_model.state_dict(), decoder_model_path + ts +'_'+ str(epoch))
+        torch.save(encoder_model.state_dict(), encoder_model_path + str(epoch))
+        torch.save(decoder_model.state_dict(), decoder_model_path + str(epoch))
 
         print('Models saved for epoch:', epoch)
 
