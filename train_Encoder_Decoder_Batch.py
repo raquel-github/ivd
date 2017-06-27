@@ -46,7 +46,7 @@ encoder_model_path      = 'Models/bin/enc'
 encoder_game_path       = 'Preprocessing/preprocessed_games/gameid2matrix_encoder.p'
 
 # Decoder
-hidden_decoder_dim      = 512 
+hidden_decoder_dim      = 512
 index2word              = dr.get_ind2word()
 visual_features_dim     = 4096
 decoder_model_path      = 'Models/bin/dec'
@@ -54,10 +54,10 @@ decoder_game_path       = 'Preprocessing/preprocessed_games/gameid2matrix_decode
 
 # Training
 iterations              = 100
-encoder_lr              = 0.0001
-decoder_lr              = 0.0001
+encoder_lr              = 0.00001
+decoder_lr              = 0.00001
 grad_clip               = 50.
-teacher_forcing         = False # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
+teacher_forcing         = True # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
 tf_decay_mode           = 'one-by-epoch-squared'
 train_val_ratio         = 0.1
 save_models             = True
@@ -87,7 +87,7 @@ if logging:
 
 def get_teacher_forcing_p(epoch):
     """ return the probability of appyling teacher forcing at a given epoch """
-    epoch += 1
+    epoch += 2
     if tf_decay_mode == 'one-by-epoch': return 1/epoch
     if tf_decay_mode == 'one-by-epoch-squared': return 1/(epoch**2)
 
@@ -106,20 +106,20 @@ decoder_optimizer = optim.Adam(decoder_model.parameters(), decoder_lr)
 
 # Get all the games which have been successful
 
-if not os.path.isfile('test_game_ids.p'):
-    _game_ids = get_game_ids_with_max_length(dr, length)
-    game_ids = list()
-    # get only successful games
-    for _gid in _game_ids:
-        if dr.get_success(_gid) == 1:
-            if len(game_ids) < n_games_to_train:
-                game_ids.append(_gid)
-            else:
-                break
+#if not os.path.isfile('test_game_ids.p') or True:
+_game_ids = get_game_ids_with_max_length(dr, length)
+game_ids = list()
+# get only successful games
+for _gid in _game_ids:
+    if dr.get_success(_gid) == 1:
+        if len(game_ids) < n_games_to_train:
+            game_ids.append(_gid)
+        else:
+            break
 
-    pickle.dump(game_ids, open('test_game_ids.p', 'wb'))
-else:
-    game_ids = pickle.load(open('test_game_ids.p', 'rb'))
+#    pickle.dump(game_ids, open('test_game_ids.p', 'wb'))
+#else:
+#    game_ids = pickle.load(open('test_game_ids.p', 'rb'))
 
 
 
@@ -155,7 +155,7 @@ for epoch in range(iterations):
         start_batch = time()
         # Initiliaze encoder/decoder hidden state with 0
         encoder_model.hidden_encoder = encoder_model.init_hidden(train_batch)
-        
+
         # get the questions and the visual features of the current game
         visual_features_batch = get_batch_visual_features(dr, batch, visual_features_dim)
 
@@ -226,8 +226,8 @@ for epoch in range(iterations):
                 decoder_loss.backward(retain_variables=False)
 
                 # clip gradients to prevent gradient explosion
-                # nn.utils.clip_grad_norm(encoder_model.parameters(), max_norm=grad_clip)
-                # nn.utils.clip_grad_norm(decoder_model.parameters(), max_norm=grad_clip)
+                nn.utils.clip_grad_norm(encoder_model.parameters(), max_norm=grad_clip)
+                nn.utils.clip_grad_norm(decoder_model.parameters(), max_norm=grad_clip)
 
                 encoder_optimizer.step()
                 decoder_optimizer.step()
@@ -279,5 +279,3 @@ for epoch in range(iterations):
         print('Models saved for epoch:', epoch)
 
 print("Training completed.")
-
-
