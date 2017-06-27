@@ -121,9 +121,9 @@ class EncoderBatch(Encoder):
         sentence_batch_embedding = self.word_embeddings(sentence_batch)
 
         if use_cuda:
-            visual_featues_batch_words = Variable(torch.zeros(self.length+1, self.batch_size, self.visual_features_dim)).cuda()
+            visual_featues_batch_words = Variable(torch.zeros(self.length+1, self.batch_size, self.visual_features_dim), requires_grad=False).cuda()
         else:
-            visual_featues_batch_words = Variable(torch.zeros(self.length+1, self.batch_size, self.visual_features_dim))
+            visual_featues_batch_words = Variable(torch.zeros(self.length+1, self.batch_size, self.visual_features_dim), requires_grad=False)
 
         for i in range(self.length+1):
             visual_featues_batch_words[i] = visual_features_batch
