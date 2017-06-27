@@ -4,33 +4,40 @@ import torch.optim as optim
 import torch.autograd as autograd
 from torch.autograd import Variable
 
+import getpass
 
-from Models.Encoder import Encoder
-from Models.Decoder import Decoder
+
+from Models.Encoder import EncoderBatch as Encoder
+from Models.Decoder import DecoderBatch as Decoder
 from Models.Guesser import Guesser
 from Models.Decider import Decider
 
 from Preprocessing.DataReader import DataReader
+from Preprocessing.BatchUtil2 import create_batches, get_batch_visual_features, pad_sos
+
+use_cuda = torch.cuda.is_available()
 
 
 data_path               = "../ivd_data/preprocessed.h5"
 indicies_path           = "../ivd_data/indices.json"
-images_path             = "train2014"
 images_features_path    = "../ivd_data/image_features.h5"
 
-dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_path=images_path, images_features_path=images_features_path)
+dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_features_path=images_features_path)
 
 ### Hyperparamters
+my_sys                  = getpass.getuser() != 'nabi'
+logging                 = False if my_sys else True
+save_models             = False if my_sys else True
 
 # Encoder
 word2index              = dr.get_word2ind()
 vocab_size              = len(word2index)
-word_embedding_dim      = 128
-hidden_encoder_dim      = 128
+word_embedding_dim      = 512
+hidden_encoder_dim      = 512
 encoder_model_path      = 'Models/bin/enc'
 
 # Decoder
-hidden_decoder_dim      = 128
+hidden_decoder_dim      = 512
 index2word              = dr.get_ind2word()
 visual_features_dim     = 4096
 decoder_model_path      = 'Models/bin/dec'
@@ -42,18 +49,27 @@ cat2id 					= dr.get_cat2id()
 object_embedding_dim 	= 20
 
 # Training
-iterations              = 10
+iterations              = 100
 decider_lr              = 0.0001
 guesser_lr              = 0.0001
+grad_clip               = 50.
+train_val_ratio         = 0.1
+batch_size				= 2 if my_sys else 256
 
 
-encoder_model = Encoder(vocab_size, word_embedding_dim, hidden_encoder_dim, word2index)
-encoder_model.load_state_dict(torch.load(encoder_model_path))
+# load encoder / decoder
+encoder_model = Encoder(vocab_size, word_embedding_dim, hidden_encoder_dim, word2index, batch_size)
+decoder_model = Decoder(word_embedding_dim, hidden_decoder_dim, visual_features_dim, vocab_size, batch_size)
 
-decoder_model = Decoder(word_embedding_dim, hidden_decoder_dim, visual_features_dim, vocab_size)
-decoder_model.load_state_dict(torch.load(decoder_model_path))
+if use_cuda:
+	encoder_model.load_state_dict(torch.load(encoder_model_path))
+	decoder_model.load_state_dict(torch.load(decoder_model_path))
 
-# Load Oracle model to play the game
+else:
+	encoder_model.load_state_dict(torch.load(encoder_model_path, map_location=lambda storage, loc: storage))
+	decoder_model.load_state_dict(torch.load(decoder_model_path, map_location=lambda storage, loc: storage))
+
+# TODO Load Oracle model to play the game
 
 decider_model = Decider(hidden_encoder_dim)
 guesser_model = Guesser(hidden_encoder_dim, categories_length, cat2id, object_embedding_dim)
@@ -64,9 +80,60 @@ guesser_loss_function = nn.NLLLoss()
 decider_optimizer = optim.Adam(decider_model.parameters(), decider_lr)
 guesser_optimizer = optim.Adam(guesser_model.parameters(), guesser_lr)
 
-
 game_ids = dr.get_game_ids()
 game_ids = game_ids[2710:2715]
+
+
+padded_sos = pad_sos(int(word2index['-SOS-']), int(word2index['-PAD-']), length)
+
+for epoch in range(iterations):
+	if use_cuda:
+        decoder_epoch_loss = torch.cuda.FloatTensor()
+        decoder_epoch_loss_validation = torch.cuda.FloatTensor()
+    else:
+        decoder_epoch_loss = torch.Tensor()
+        decoder_epoch_loss_validation = torch.Tensor()
+
+	batches = create_batches(game_ids_train, batch_size)
+    batches_val = create_batches(game_ids_val, batch_size)
+
+	batchFlag = False
+	batch_number = 0
+	for batch in np.vstack([batches, batches_val]):
+		train_batch = batch in batches
+		start_batch = time()
+
+		encoder_model.hidden_encoder = encoder_model.init_hidden(train_batch)
+
+		visual_features_batch = get_batch_visual_features(dr, batch, visual_features_dim)
+
+		decisions = torch.ones(batch_size) * -1
+
+		question_number = 0
+
+		while (t.numpy() < 0.5).all() == True: # check whether the decider made the decision to guess for all games
+
+			if question_number == 0:
+				_, encoder_hidden_state = encoder_model(, visual_features_batch, padded_sos) # TODO ENCODER EMBEDDING INPUT
+				decoder_out = decoder_model(visual_features_batch, encoder_hidden_state, padded_sos)
+
+			elif question_number == 1:
+				_, encoder_hidden_state = encoder_model(, visual_features_batch) # TODO ENCODER EMBEDDING INPUT
+				decoder_out = decoder_model(visual_features_batch, encoder_hidden_state)
+
+				# apply beam search
+
+			else:
+				_, encoder_hidden_state = encoder_model(, visual_features_batch) # TODO ENCODER EMBEDDING INPUT
+				decoder_out = decoder_model(visual_features_batch, encoder_hidden_state)
+
+
+
+			question_number += 1
+
+
+
+
 
 for epoch in range(iterations):
 
