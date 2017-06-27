@@ -38,7 +38,7 @@ dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_path=im
 my_sys                  = getpass.getuser() != 'nabi'
 length                  = 11
 logging                 = False if my_sys else True
-save_models             = False if my_sys else True
+save_models             = True if my_sys else True
 
 # Encoder
 word2index              = dr.get_word2ind()

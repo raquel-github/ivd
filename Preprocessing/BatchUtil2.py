@@ -148,10 +148,12 @@ def get_batch_visual_features(dr, game_ids, visual_features_dim):
     return visual_features_batch
 
 
-def pad_sos(sos_token, pad_token, length):
+def pad_sos(sos_token, pad_token, length, batch_size):
     """ returns the padded sos token """
-    padded_sos      = torch.ones(length+1, out=torch.LongTensor()) * pad_token
-    padded_sos[0]   = sos_token
+    padded_sos      = torch.ones(length+1, batch_size, out=torch.LongTensor()) * pad_token
+    for bi in range(batch_size):
+        padded_sos[0,bi] = sos_token
+        
     return padded_sos
 
 """
