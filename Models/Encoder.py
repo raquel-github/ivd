@@ -104,7 +104,9 @@ class EncoderBatch(Encoder):
 
         self.visual_features_dim = visual_features_dim
 
-        self.encoder_lstm = nn.LSTM(word_embedding_dim+visual_features_dim, hidden_encoder_dim)
+        self.visual2wordDim = nn.Linear(self.visual_features_dim, self.word_embedding_dim)
+
+        self.encoder_lstm = nn.LSTM(word_embedding_dim*2, hidden_encoder_dim)
 
         self.length = length
 
@@ -121,12 +123,12 @@ class EncoderBatch(Encoder):
         sentence_batch_embedding = self.word_embeddings(sentence_batch)
 
         if use_cuda:
-            visual_featues_batch_words = Variable(torch.zeros(self.length+1, self.batch_size, self.visual_features_dim), requires_grad=False).cuda()
+            visual_featues_batch_words = Variable(torch.zeros(self.length+1, self.batch_size, self.word_embedding_dim), requires_grad=False).cuda()
         else:
-            visual_featues_batch_words = Variable(torch.zeros(self.length+1, self.batch_size, self.visual_features_dim), requires_grad=False)
+            visual_featues_batch_words = Variable(torch.zeros(self.length+1, self.batch_size, self.word_embedding_dim), requires_grad=False)
 
         for i in range(self.length+1):
-            visual_featues_batch_words[i] = visual_features_batch
+            visual_featues_batch_words[i] = self.visual2wordDim(visual_features_batch)
 
         encoder_in = torch.cat([sentence_batch_embedding, visual_featues_batch_words], dim=2)
 

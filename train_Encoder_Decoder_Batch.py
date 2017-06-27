@@ -34,9 +34,10 @@ dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_path=im
 
 ### Hyperparemters
 # General
+my_sys                  = True
 length                  = 11
-logging                 = True
-save_models             = True
+logging                 = False if my_sys else True
+save_models             = False if my_sys else True
 
 # Encoder
 word2index              = dr.get_word2ind()
@@ -61,8 +62,8 @@ grad_clip               = 50.
 teacher_forcing         = False # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
 tf_decay_mode           = 'one-by-epoch-squared'
 train_val_ratio         = 0.1
-batch_size              = 256
-n_games_to_train        = 96000
+batch_size              = 2 if my_sys else 256
+n_games_to_train        = 20 if my_sys else 96000
 
 # save hyperparameters in a file
 if logging:
