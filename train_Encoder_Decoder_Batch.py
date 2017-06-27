@@ -11,6 +11,7 @@ import datetime
 import pickle
 import os.path
 from copy import deepcopy
+import getpass
 
 import torch
 import torch.nn as nn
@@ -34,7 +35,7 @@ dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_path=im
 
 ### Hyperparemters
 # General
-my_sys                  = True
+my_sys                  = getpass.getuser() != 'nabi'
 length                  = 11
 logging                 = False if my_sys else True
 save_models             = False if my_sys else True
