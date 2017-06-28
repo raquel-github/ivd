@@ -9,6 +9,7 @@ import os
 import pickle
 import numpy as np
 from time import time
+from random import random
 
 from Models.Encoder import EncoderBatch as Encoder
 from Models.Decoder import DecoderBatch as Decoder
@@ -16,7 +17,7 @@ from Models.Guesser import Guesser
 from Models.Decider import Decider
 
 from Preprocessing.DataReader import DataReader
-from Preprocessing.BatchUtil2 import create_batches, get_batch_visual_features, pad_sos
+from Preprocessing.BatchUtil2 import pad_sos
 
 use_cuda = torch.cuda.is_available()
 
@@ -58,7 +59,7 @@ decider_lr              = 0.0001
 guesser_lr              = 0.0001
 grad_clip               = 50.
 train_val_ratio         = 0.1
-batch_size				= 2 if my_sys else 200
+batch_size				= 1 if my_sys else 1
 n_games_to_train		= 20
 
 pad_token				= int(word2index['-PAD-'])
@@ -78,6 +79,12 @@ else:
 	decoder_model.load_state_dict(torch.load(decoder_model_path, map_location=lambda storage, loc: storage))
 
 # TODO Load Oracle model to play the game
+
+for param in encoder_model.parameters():
+	param.requires_grad = False
+
+for param in decoder_model.parameters():
+	param.requires_grad = False
 
 decider_model = Decider(hidden_encoder_dim)
 guesser_model = Guesser(hidden_encoder_dim, categories_length, cat2id, object_embedding_dim)
@@ -112,180 +119,114 @@ print("Valid game ids done. Number of valid games: ", len(game_ids))
 game_ids_val = list(np.random.choice(game_ids, int(train_val_ratio*len(game_ids))))
 game_ids_train = [gid for gid in game_ids if gid not in game_ids_val]
 
+
+
 padded_sos = pad_sos(sos_token, pad_token, length, batch_size)
 sos_embedding = encoder_model.get_sos_embedding(use_cuda)
 
 for epoch in range(iterations):
+	start = time()
 	if use_cuda:
-		decoder_epoch_loss = torch.cuda.FloatTensor()
-		decoder_epoch_loss_validation = torch.cuda.FloatTensor()
+		guesser_epoch_loss 		= torch.cuda.FloatTensor()
+		guesser_epoch_loss_vali = torch.cuda.FloatTensor()
+		decider_epoch_loss 		= torch.cuda.FloatTensor()
+		decider_epoch_loss_vali = torch.cuda.FloatTensor()
 	else:
-		decoder_epoch_loss = torch.Tensor()
-		decoder_epoch_loss_validation = torch.Tensor()
+		guesser_epoch_loss 		= torch.FloatTensor()
+		guesser_epoch_loss_vali = torch.FloatTensor()
+		decider_epoch_loss 		= torch.FloatTensor()
+		decider_epoch_loss_vali = torch.FloatTensor()
 
-	batches = create_batches(game_ids_train, batch_size)
-	batches_val = create_batches(game_ids_val, batch_size)
 
-	batchFlag = False
-	batch_number = 0
+	for gid in game_ids_train+game_ids_val:
 
-	guesser_loss = 0
-	decider_loss = 0
+		decider_optimizer.zero_grad()
+		guesser_optimizer.zero_grad()
 
-	for batch in np.vstack([batches, batches_val]):
-		train_batch = batch in batches
-		start_batch = time()
+		guesser_loss = 0
+		decider_loss = 0
 
-		encoder_model.hidden_encoder = encoder_model.init_hidden(train_batch)
+		train_game = gid in game_ids_train
 
-		visual_features_batch = get_batch_visual_features(dr, batch, visual_features_dim)
+		encoder_model.hidden_encoder = encoder_model.init_hidden(train_batch=0)
 
-		decisions = Variable(torch.ones(batch_size) * -1)
+		visual_features = Variable(torch.Tensor(dr.get_image_features(gid)), requires_grad=False).view(1,-1)
 
 		question_number = 0
-		saved_encoder_hidden_states = torch.zeros(batch_size, hidden_encoder_dim)
-		saved_encoder_hidden_bool = [False] * batch_size
 
-		while (decisions.data.numpy() < 0.5).all() == True: # check whether the decider made the decision to guess for all games
-
-			print(batch_number, question_number)
+		### Produce Questions Until Decision To Guess
+		while True:
 
 			if question_number == 0:
-				_, encoder_hidden_state = encoder_model(padded_sos, visual_features_batch)
-				decisions = decider_model(encoder_hidden_state[0])
+				_, encoder_hidden_state = encoder_model(padded_sos, visual_features)
 			else:
-				_, encoder_hidden_state = encoder_model(seq_wid, visual_features_batch)
+				_, encoder_hidden_state = encoder_model(seq_wid, visual_features)
 
-				for d_id, d_val in enumerate(decisions):
-					if d_val < 0.5:
-						decisions[d_id] = decider_model(encoder_hidden_state[0][0,d_id].view(1,1,-1))
+			decision = decider_model(encoder_hidden_state[0])
 
+			if (decision.data[0,0] < 0.5) and random() > 0.1:
+				#print("Another Question!")
+				seq_wid = torch.ones(length+1, batch_size, out=torch.LongTensor()) * pad_token
+				for word_number in range(length):
 
-			# save the hidden states for games where the decision to guess has been made
-			for did, deci in enumerate(decisions):
-				if deci > 0.5 and saved_encoder_hidden_bool[did] == False:
-					saved_encoder_hidden_states[did] = encoder_hidden_state[0].data[0,did]
-					saved_encoder_hidden_bool[did] = True
+					# decode
+					if word_number == 0:
+						decoder_out = decoder_model(visual_features, encoder_hidden_state, sos_embedding)
+					else:
+						decoder_out = decoder_model(visual_features, encoder_hidden_state)
 
+					# sample
+					w_id = torch.multinomial(torch.exp(decoder_out), 1)
+					seq_wid[word_number] = w_id.data
 
-			seq_wid = torch.ones(length+1, batch_size, out=torch.LongTensor()) * pad_token
+					#print(index2word[str(w_id.data[0][0])])
 
-			for word_number in range(length):
+					if index2word[str(w_id.data[0][0])] == '-EOS-':
+						break
 
-				if word_number == 0:
-					decoder_out = decoder_model(visual_features_batch, encoder_hidden_state, sos_embedding)
-
-				batch_w_id = torch.multinomial(torch.exp(decoder_out), 1) # sample
-
-				seq_wid[word_number] = batch_w_id.data
 
 				# TODO add the ORACLE ANSWER
 
-			question_number += 1
 
+				question_number += 1
 
-		for i, gid in enumerate(batch):
-			# Data required for the guesser
-			img_meta 			= dr.get_image_meta(gid)
-			object_categories 	= dr.get_category_id(gid)
-			object_ids 			= dr.get_object_ids(gid)
-			# get guesser target object
-			correct_obj_id  	= dr.get_target_object(gid)
-			target_guess 		= object_ids.index(correct_obj_id)
+			else:
+				#print("Guessing Time!")
+				break
 
-			guess = guesser_model(saved_encoder_hidden_states[i], img_meta, object_categories)
-
-			_, guess_id = guess.data.topk(1)
-			guess_id 	= guess_id[0][0]
-
-			guesser_loss += guesser_loss_function(guess,target_guess)
-			decider_loss += decider_loss_function(decisions[i], 1 if guess_id == target_guess else 0)
-
-		print(guesser_loss)
-		print(decider_loss)
-
-		guesser_loss.backward()
-		decider_loss.backward()
-
-		guesser_optimizer.step()
-		decider_optimizer.step()
-
-			#guesser_epoch_loss = torch.cat([guesser_epoch_loss, guesser_loss.data])
-			#decider_epoch_loss = torch.cat([decider_epoch_loss, decider_loss.data])
-
-
-		batch_number += 1
-
-
-"""
-
-
-for epoch in range(iterations):
-
-	decider_epoch_loss = torch.Tensor()
-	guesser_epoch_loss = torch.Tensor()
-
-	for gid in game_ids:
-		prod_q = '-SOS-'
-		decision = 0
-
-		visual_features = torch.Tensor(dr.get_image_features(gid))
-
-		while decision < 0.5:
-			encoder_outputs, encoder_hidden_state = encoder_model(prod_q)
-
-			prod_q = str()
-
-			decision = decider_model(encoder_hidden_state)
-
-			# TODO: Implement Beam Search here
-			if decision < 0.5:
-				for qwi in range(max_length):
-					# pass through decoder
-					if qwi == 0:
-			            # for the first word, the decoder takes the encoder hidden state and the SOS token as input
-						pw = decoder_model(visual_features, encoder_hidden_state, decoder_input=encoder_model.sos)
-					else:
-			            # for all other words, the last decoder output and last decoder hidden state will be used by the model
-						pw = decoder_model(visual_features)
-
-
-			        # get argmax()
-					_, w_id = pw.data.topk(1)
-					w_id = str(w_id[0][0])
-
-
-			        # save produced word
-					prod_q += index2word[w_id] + ' '
-
-					if w_id == word2index['-EOS-']: # TODO change to -EOS- once avail.
-						break
+		### Guess And Backpropagate if training sample
 
 		# Data required for the guesser
 		img_meta 			= dr.get_image_meta(gid)
-		object_categories 	= dr.get_category_id(gid)
+		object_categories 	= torch.LongTensor(list(map(int, dr.get_category_id(gid))))
 		object_ids 			= dr.get_object_ids(gid)
 		# get guesser target object
-		correct_obj_id  	= dr.get_correct_object_id(gid)
+		correct_obj_id  	= dr.get_target_object(gid)
 		target_guess 		= object_ids.index(correct_obj_id)
 
 		guess = guesser_model(encoder_hidden_state, img_meta, object_categories)
 
+		# get best guess for decider target calc
 		_, guess_id = guess.data.topk(1)
 		guess_id 	= guess_id[0][0]
 
-		guesser_loss = guesser_loss_function(guess,target_guess)
+		guesser_loss = guesser_loss_function(guess, Variable(torch.LongTensor([target_guess])))
+		decider_loss = decider_loss_function(decision, Variable(torch.Tensor([1 if guess_id == target_guess else 0])))
+		decider_loss = 0.9*decider_loss + 0.1*decider_loss*question_number # add regularization to decider
+
+		if train_game:
+			guesser_loss.backward()
+			decider_loss.backward()
+
+			guesser_optimizer.step()
+			decider_optimizer.step()
+
+			guesser_epoch_loss = torch.cat([guesser_epoch_loss, guesser_loss.data])
+			decider_epoch_loss = torch.cat([decider_epoch_loss, decider_loss.data])
+		else:
+			guesser_epoch_loss_vali = torch.cat([guesser_epoch_loss_vali, guesser_loss.data])
+			decider_epoch_loss_vali = torch.cat([decider_epoch_loss_vali, decider_loss.data])
 
 
-		decider_loss = decider_loss_function(decision, 1 if guess_id == target_guess else 0)
-
-		guesser_loss.backward()
-		decider_loss.backward()
-
-		guesser_optimizer.step()
-		decider_optimizer.step()
-
-		guesser_epoch_loss = torch.cat([guesser_epoch_loss, guesser_loss.data])
-		decider_epoch_loss = torch.cat([decider_epoch_loss, decider_loss.data])
-
-"""
+	print("Epoch %03d, Time %.2f, Guesser Train Loss: %.4f, Guesser Vali Loss %.4f, Decider Train Loss %.4f, Decider Vali Loss %.4f" \
+		%(epoch, time()-start,torch.mean(guesser_epoch_loss), torch.mean(guesser_epoch_loss_vali), torch.mean(decider_epoch_loss), torch.mean(decider_epoch_loss_vali)))

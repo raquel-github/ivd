@@ -57,11 +57,11 @@ class Encoder(nn.Module):
                         autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim)))
         else:
             if use_cuda:
-                return (autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim), volatile=True).cuda(),
-                        autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim), volatile=True).cuda())
+                return (autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim), requires_grad=False).cuda(),
+                        autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim), requires_grad=False).cuda())
             else:
-                return (autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim), volatile=True),
-                        autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim), volatile=True))
+                return (autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim), requires_grad=False),
+                        autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim), requires_grad=False))
 
     def word2embedd(self, w):
         if use_cuda:

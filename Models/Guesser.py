@@ -38,7 +38,7 @@ class Guesser(nn.Module):
         return onehot
 
 
-    def img_spatial(img_meta):
+    def img_spatial(self, img_meta):
         """ returns the spatial information of a bounding box """
         bboxes          = img_meta[0] # gets all bboxes in the image
 
@@ -79,21 +79,16 @@ class Guesser(nn.Module):
     def forward(self, hidden_encoder, img_meta, object_categories):
 
         # get the object embeddings of the objects in the image
-        obj_embeddings = self.object_embeddings(Variable(torch.LongTensor(object_categories)))
-        """
-        object_embeddings = Variable(torch.zeros(len(object_categories), self.object_embedding_dim))
-        for i, obj in enumerate(object_categories):
-            obj_embeddings[i] = self.object_embeddings(obj)
-        """
+        obj_embeddings = self.object_embeddings(Variable(object_categories))
+
         # get the spatial info
-        spatial = img_spatial(img_meta)
+        spatial = self.img_spatial(img_meta)
 
-        mlp_in = Variable(torch.cat([spatial, object_embeddings]))
+        mlp_in = torch.cat([spatial, obj_embeddings], dim=1)
 
-        proposed_embeddings = mlp_model(mlp_in)
+
+        proposed_embeddings = self.mlp_model(mlp_in)
 
         hidden_encoder = torch.cat([hidden_encoder[0]] * len(object_categories))
-
-
 
         return F.log_softmax(torch.mm(proposed_embeddings, hidden_encoder[0].view(self.hidden_encoder_dim, -1)).t())
