@@ -39,6 +39,10 @@ my_sys                  = getpass.getuser() == 'nabi'
 length                  = 11
 logging                 = True if my_sys else False
 save_models             = True if my_sys else False
+train_from_check        = True
+if train_from_check:
+    load_enc_from       = 'Models/bin/enc2017_06_27_17_12_4'
+    load_dec_from       = 'Models/bin/dec2017_06_27_17_12_4'
 
 # Encoder
 word2index              = dr.get_word2ind()
@@ -96,6 +100,17 @@ def get_teacher_forcing_p(epoch):
 
 encoder_model = Encoder(vocab_size, word_embedding_dim, hidden_encoder_dim, word2index, visual_features_dim, length, batch_size)
 decoder_model = Decoder(word_embedding_dim, hidden_decoder_dim, visual_features_dim, vocab_size, batch_size)
+
+if train_from_check:
+    if use_cuda:
+    	encoder_model.load_state_dict(torch.load(load_enc_from))
+    	decoder_model.load_state_dict(torch.load(load_dec_from))
+
+    else:
+    	encoder_model.load_state_dict(torch.load(load_enc_from, map_location=lambda storage, loc: storage))
+    	decoder_model.load_state_dict(torch.load(load_dec_from, map_location=lambda storage, loc: storage))
+
+    print("Loaded last models from: Encodoer: %s Decoder: %s" %(load_enc_from, load_dec_from))
 
 if use_cuda:
     encoder_model.cuda()
