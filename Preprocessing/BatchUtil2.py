@@ -138,8 +138,43 @@ def pad_sos(sos_token, pad_token, length, batch_size):
     padded_sos      = torch.ones(length+1, batch_size, out=torch.LongTensor()) * pad_token
     for bi in range(batch_size):
         padded_sos[0,bi] = sos_token
-        
+
     return padded_sos
+
+
+def lstm_data(dr, gid, word2index):
+    questions   = dr.get_questions(gid)
+    answers     = dr.get_answers(gid)
+
+    tokens = list()
+    for qid, question in enumerate(questions):
+        tokens.append(list())
+        for word in question.split():
+            tokens[-1].append(word2index[word])
+
+        tokens[-1].append(word2index[answers[qid]])
+
+
+    _in = [] * len(questions)
+    out = [] * len(questions)
+
+    for qaid, qa_token in enumerate(tokens):
+        _in.append(list())
+        out.append(list())
+        if qaid == 0:
+            _in[-1] = qa_token[:-2]
+            out[-1] = qa_token[1:-1]
+
+        else:
+            _in[-1] = [tokens[qaid-1][-1]] + qa_token[:-2]
+            out[-1] = qa_token[:-1]
+
+    _in = torch.LongTensor(_in)
+    out = torch.LongTensor(out)
+
+    return _in, out
+
+
 
 """
 data_path               = "../ivd_data/preprocessed.h5"
@@ -175,4 +210,11 @@ game_ids = list(gameid2matrix_decoder.keys())[:3]
 a, b, c = create_batch_from_games(dr, game_ids, pad_token, length, 'Preprocessing/preprocessed_games/gameid2matrix_encoder.p', 'Preprocessing/preprocessed_games/gameid2matrix_decoder.p')
 print(b)
 print(c)
+
+
+a,b = lstm_data(dr, 11, word2index)
+print(dr.get_questions(11))
+print(dr.get_answers(11))
+print(a)
+print(b)
 """
