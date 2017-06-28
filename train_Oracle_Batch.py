@@ -105,7 +105,7 @@ def train():
     gameids_val = list(np.random.choice(gameids, int(train_val_ratio*len(gameids))))
     gameids_train = [gid for gid in gameids if gid not in gameids_val]
 
-    file = open('oracle_training_log.log')
+    file = open('oracle_training_log.log', 'w')
 
     # Run epochs
     for epoch in range(7, max_iter):
