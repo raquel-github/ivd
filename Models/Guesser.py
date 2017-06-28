@@ -4,6 +4,9 @@ import torch.nn as nn
 from torch.autograd import Variable
 import torch.nn.functional as F
 
+use_cuda = torch.cuda.is_available()
+# use_cuda = False
+
 class Guesser(nn.Module):
 
     def __init__(self, hidden_encoder_dim, categories_length, cat2id, object_embedding_dim):
@@ -30,6 +33,8 @@ class Guesser(nn.Module):
             nn.ReLU(),
             nn.Linear(64, self.hidden_encoder_dim)
         )
+        if use_cuda:
+            self.mlp_model.cuda()
 
 
     def get_cat2id(self, cat):
@@ -48,7 +53,10 @@ class Guesser(nn.Module):
         image_center_x  = width / 2
         image_center_y  = height / 2
 
-        spatial = Variable(torch.FloatTensor(len(bboxes), 8))
+        if use_cuda:
+            spatial = Variable(torch.FloatTensor(len(bboxes), 8)).cuda()
+        else:
+            spatial = Variable(torch.FloatTensor(len(bboxes), 8))
 
         for i, bbox in enumerate(bboxes):
             x_min = bbox[0] / width
@@ -79,7 +87,10 @@ class Guesser(nn.Module):
     def forward(self, hidden_encoder, img_meta, object_categories):
 
         # get the object embeddings of the objects in the image
-        obj_embeddings = self.object_embeddings(Variable(object_categories))
+        if use_cuda:
+            obj_embeddings = self.object_embeddings(Variable(object_categories).cuda())
+        else:
+            obj_embeddings = self.object_embeddings(Variable(object_categories))
 
         # get the spatial info
         spatial = self.img_spatial(img_meta)

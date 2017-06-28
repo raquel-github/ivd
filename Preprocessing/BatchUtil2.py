@@ -96,21 +96,6 @@ def create_batch_from_games(dr, game_ids, pad_token, length, word2index, train_b
     encoder_batch = [0] * max_n_questions
     decoder_batch = [0] * max_n_questions
     for i in range(len(encoder_batch)):
-        # if train_batch:
-        #     if use_cuda:
-        #         encoder_batch[i] = Variable(torch.ones(len(game_ids), length+1, out=torch.LongTensor()) * pad_token,requires_grad= False).cuda()
-        #         decoder_batch[i] = Variable(torch.ones(len(game_ids), length, out=torch.LongTensor()) * pad_token,requires_grad= False).cuda()
-        #     else:
-        #         encoder_batch[i] = Variable(torch.ones(len(game_ids), length+1, out=torch.LongTensor()) * pad_token,requires_grad= False)
-        #         decoder_batch[i] = Variable(torch.ones(len(game_ids), length, out=torch.LongTensor()) * pad_token,requires_grad= False)
-        # else:
-        #     if use_cuda:
-        #         encoder_batch[i] = Variable(torch.ones(len(game_ids), length+1,out=torch.LongTensor())*pad_token,volatile=True).cuda()
-        #         decoder_batch[i] = Variable(torch.ones(len(game_ids), length, out=torch.LongTensor())*pad_token,volatile=True).cuda()
-        #     else:
-        #         encoder_batch[i] = Variable(torch.ones(len(game_ids), length+1,out=torch.LongTensor()) * pad_token, volatile=True)
-        #         decoder_batch[i] = Variable(torch.ones(len(game_ids), length,out=torch.LongTensor())*pad_token, volatile=True)
-
         encoder_batch[i] = torch.ones(len(game_ids), length+1,out=torch.LongTensor()) * pad_token
         decoder_batch[i] = torch.ones(len(game_ids), length,out=torch.LongTensor())*pad_token
 

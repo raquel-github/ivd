@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 use_cuda = torch.cuda.is_available()
+# use_cuda = False
 
 class Decoder(nn.Module):
 
@@ -68,6 +69,9 @@ class DecoderBatch(Decoder):
     def __init__(self, word_embedding_dim, hidden_decoder_dim, visual_features_dim, vocab_size, batch_size):
         Decoder.__init__(self, word_embedding_dim, hidden_decoder_dim, visual_features_dim, vocab_size, batch_size)
 
+        if use_cuda:
+            self.decoder_lstm.cuda()
+            self.hidden2word.cuda()            
 
     def forward(self, visual_features, hidden_encoder, decoder_input=None):
 

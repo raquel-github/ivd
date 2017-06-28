@@ -17,10 +17,10 @@ from Models.Guesser import Guesser
 from Models.Decider import Decider
 
 from Preprocessing.DataReader import DataReader
-from Preprocessing.BatchUtil2 import pad_sos
+from Preprocessing.BatchUtil2 import pad_sos, get_game_ids_with_max_length
 
 use_cuda = torch.cuda.is_available()
-
+# use_cuda = False
 
 data_path               = "../ivd_data/preprocessed.h5"
 indicies_path           = "../ivd_data/indices.json"
@@ -39,13 +39,13 @@ word2index              = dr.get_word2ind()
 vocab_size              = len(word2index)
 word_embedding_dim      = 512
 hidden_encoder_dim      = 512
-encoder_model_path      = 'Models/bin/enc2017_06_27_18_12_0'
+encoder_model_path      = 'Models/bin/enc2017_06_27_17_12_4'
 
 # Decoder
 hidden_decoder_dim      = 512
 index2word              = dr.get_ind2word()
 visual_features_dim     = 4096
-decoder_model_path      = 'Models/bin/dec2017_06_27_18_12_0'
+decoder_model_path      = 'Models/bin/dec2017_06_27_17_12_4'
 max_length              = dr.get_question_max_length()
 
 # Guesser
@@ -88,6 +88,10 @@ for param in decoder_model.parameters():
 
 decider_model = Decider(hidden_encoder_dim)
 guesser_model = Guesser(hidden_encoder_dim, categories_length, cat2id, object_embedding_dim)
+
+if use_cuda:
+	decider_model.cuda()
+	guesser_model.cuda()
 
 decider_loss_function = nn.MSELoss()
 guesser_loss_function = nn.NLLLoss()
@@ -150,7 +154,10 @@ for epoch in range(iterations):
 
 		encoder_model.hidden_encoder = encoder_model.init_hidden(train_batch=0)
 
-		visual_features = Variable(torch.Tensor(dr.get_image_features(gid)), requires_grad=False).view(1,-1)
+		if use_cuda:
+			visual_features = Variable(torch.Tensor(dr.get_image_features(gid)), requires_grad=False).cuda().view(1,-1)
+		else:
+			visual_features = Variable(torch.Tensor(dr.get_image_features(gid)), requires_grad=False).view(1,-1)
 
 		question_number = 0
 
@@ -210,9 +217,14 @@ for epoch in range(iterations):
 		_, guess_id = guess.data.topk(1)
 		guess_id 	= guess_id[0][0]
 
-		guesser_loss = guesser_loss_function(guess, Variable(torch.LongTensor([target_guess])))
-		decider_loss = decider_loss_function(decision, Variable(torch.Tensor([1 if guess_id == target_guess else 0])))
-		decider_loss = 0.9*decider_loss + 0.1*decider_loss*question_number # add regularization to decider
+		if use_cuda:
+			guesser_loss = guesser_loss_function(guess, Variable(torch.LongTensor([target_guess])).cuda())
+			decider_loss = decider_loss_function(decision, Variable(torch.Tensor([1 if guess_id == target_guess else 0])).cuda())
+			decider_loss = 0.9*decider_loss + 0.1*decider_loss*question_number # add regularization to decider
+		else:
+			guesser_loss = guesser_loss_function(guess, Variable(torch.LongTensor([target_guess])))
+			decider_loss = decider_loss_function(decision, Variable(torch.Tensor([1 if guess_id == target_guess else 0])))
+			decider_loss = 0.9*decider_loss + 0.1*decider_loss*question_number # add regularization to decider
 
 		if train_game:
 			guesser_loss.backward()

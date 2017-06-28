@@ -61,7 +61,7 @@ class Encoder(nn.Module):
                         autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim), requires_grad=False).cuda())
             else:
                 return (autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim), requires_grad=False),
-                        autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim), requires_grad=False))
+                        autograd.Variable(torch.zeros(1, self.batch_size, self.hidden_encoder_dim), requires_grad=False ))
 
     def word2embedd(self, w):
         if use_cuda:
@@ -106,7 +106,13 @@ class EncoderBatch(Encoder):
 
         self.visual2wordDim = nn.Linear(self.visual_features_dim, self.word_embedding_dim)
 
+        if use_cuda:
+            self.visual2wordDim.cuda()
+
         self.encoder_lstm = nn.LSTM(word_embedding_dim*2, hidden_encoder_dim)
+
+        if use_cuda:
+            self.encoder_lstm.cuda()
 
         self.length = length
 
