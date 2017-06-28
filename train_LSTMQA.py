@@ -157,7 +157,7 @@ for epoch in range(iterations):
     		lstm_epoch_loss_validation = torch.cat([lstm_epoch_loss_validation, game_loss.data])
 
     	if(gid%2500==0 and gid>1):
-    		print("GID: "+gid+" Done")
+    		print("GID: "+str(gid)+" Done")
 
 
     print("Epoch %03d, Time taken %.2f, Training-Loss %.5f, Validation-Loss %.5f" %(epoch, time()-start,torch.mean(lstm_epoch_loss), torch.mean(lstm_epoch_loss_validation)))       
