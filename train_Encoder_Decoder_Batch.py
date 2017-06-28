@@ -89,7 +89,10 @@ if logging:
         hyp.write("train_val_ratio %f \n" %(train_val_ratio))
         hyp.write("save_models %f \n" %(save_models))
         hyp.write("batch_size %i \n" %(batch_size))
-        hyp.write("n_games_to_train %i \n" %(n_games_to_train))
+        hyp.write("train_from_check %i \n" %(train_from_check))
+        if train_from_check:
+            hyp.write("load_enc_from %i \n" %(load_enc_from))
+            hyp.write("load_dec_from %i \n" %(load_dec_from))
 
 def get_teacher_forcing_p(epoch):
     """ return the probability of appyling teacher forcing at a given epoch """
