@@ -87,6 +87,7 @@ def train():
 
     #Instance of Oracle om LSTM en MLP te runnen?
     model = Oracle(vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size)
+    model.load_state_dict(torch.load('Models/bin/oracle_model_epoch_5'))
     
     # Are we using cuda?
     if use_cuda:
@@ -94,7 +95,7 @@ def train():
 
     # Create loss and optimizer object
     loss = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.00001)
+    optimizer = optim.Adam(model.parameters(), lr=0.000003)
 
     # Get the game IDs
     gameids = dr.get_game_ids()
@@ -104,8 +105,10 @@ def train():
     gameids_val = list(np.random.choice(gameids, int(train_val_ratio*len(gameids))))
     gameids_train = [gid for gid in gameids if gid not in gameids_val]
 
+    file = open('oracle_training_log.log')
+
     # Run epochs
-    for epoch in range(max_iter):
+    for epoch in range(7, max_iter):
 
         # Save start time
         start = time()
@@ -123,7 +126,8 @@ def train():
         batches_val = create_batches(gameids_val, batch_size) 
         
         # Print epoch number
-        print("Epoch number %d" % (epoch))
+        file.write("Epoch number %d" % (epoch))
+        file.flush()
 
         # Loop over batches
         for batch in np.vstack([batches, batches_val]):
@@ -198,10 +202,11 @@ def train():
             cost.backward()
             optimizer.zero_grad() 
 
-        print("time:" + str(time()-start) + " \n Loss:" + str(torch.mean(oracle_epoch_loss)))
-        print("Validation loss: " + str(torch.mean(oracle_epoch_loss_valid)))
+        file.write("time:" + str(time()-start) + " \n Loss:" + str(torch.mean(oracle_epoch_loss)))
+        file.write("Validation loss: " + str(torch.mean(oracle_epoch_loss_valid)))
+        file.flush()
 
-        torch.save(model.state_dict(), 'Models/bin/oracle_model')
+        torch.save(model.state_dict(), 'Models/bin/oracle_model_epoch_' + str(epoch))
 
 
 if __name__ == '__main__':
