@@ -39,7 +39,7 @@ my_sys                  = getpass.getuser() == 'nabi'
 length                  = 11
 logging                 = True if my_sys else False
 save_models             = True if my_sys else False
-train_from_check        = True
+train_from_check        = False
 if train_from_check:
     load_enc_from       = 'Models/bin/enc2017_06_27_17_12_4'
     load_dec_from       = 'Models/bin/dec2017_06_27_17_12_4'
@@ -61,8 +61,8 @@ decoder_game_path       = 'Preprocessing/preprocessed_games/gameid2matrix_decode
 
 # Training
 iterations              = 100
-encoder_lr              = 0.0001
-decoder_lr              = 0.0001
+encoder_lr              = 0.001
+decoder_lr              = 0.001
 grad_clip               = 50.
 teacher_forcing         = False # if TRUE, the decoder input will always be the gold standard word embedding and not the preivous output
 tf_decay_mode           = 'one-by-epoch-squared'
