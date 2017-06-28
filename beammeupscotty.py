@@ -69,22 +69,27 @@ sos_embedding = encoder_model.get_sos_embedding(use_cuda)
 n_questions = 5
 seq_p = [ [0] * n_questions] * topk
 seq_w = [ [''] * n_questions] * topk
-print(seq_p)
 padded_sos = pad_sos(sos_token, pad_token, length, batch_size)
 for k in range(topk):
     encoder_model.init_hidden(train_batch=0)
     for n in range(n_questions):
         for l in range(length+1):
-            print(l)
             if l == 0:
-                print(type(visual_features_batch.data))
+
                 _, encoder_hidden_state     = encoder_model(padded_sos, visual_features_batch)
                 decoder_out                 = decoder_model(visual_features_batch, encoder_hidden_state, sos_embedding)
                 wp, w_id                    = decoder_out.topk(topk)
                 wp, w_id                    = wp.data.numpy()[0][k], int(w_id.data.numpy()[0][k])
 
+                seq_p[k][n] += wp
+                seq_w[k][n] += index2word[str(w_id)] + ' '
+
+
             else:
-                _, encoder_hidden_state     = encoder_model(torch.LongTensor([w_id]).view(1,-1))
+                enc_in = torch.ones(length+1, 1, out=torch.LongTensor()) * pad_token
+                enc_in[0,0] = w_id
+
+                _, encoder_hidden_state     = encoder_model(enc_in, visual_features_batch)
                 decoder_out                 = decoder_model(visual_features_batch, encoder_hidden_state)
                 wp, w_id                    = decoder_out.topk(1)
                 wp, w_id                    = wp.data.numpy()[0][0], int(w_id.data.numpy()[0][0])
