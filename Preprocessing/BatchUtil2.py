@@ -169,9 +169,6 @@ def lstm_data(dr, gid, word2index):
             _in[-1] = [tokens[qaid-1][-1]] + qa_token[:-2]
             out[-1] = qa_token[:-1]
 
-    _in = torch.LongTensor(_in)
-    out = torch.LongTensor(out)
-
     return _in, out
 
 
