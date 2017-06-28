@@ -4,6 +4,8 @@ import torch.optim as optim
 import torch.autograd as autograd
 from torch.autograd import Variable
 
+from random import random, randint
+
 from Models.Encoder import EncoderBatch as Encoder
 from Models.Decoder import DecoderBatch as Decoder
 
@@ -39,6 +41,7 @@ max_length              = dr.get_question_max_length()
 length                  = 11
 topk                    = 1
 batch_size              = 1
+search_mode             = 'beam' # 'beam' or 'sample'
 
 pad_token               = int(word2index['-PAD-'])
 sos_token               = int(word2index['-SOS-'])
@@ -51,9 +54,10 @@ decoder_model.load_state_dict(torch.load(decoder_model_path, map_location=lambda
 
 
 # get a random game
-gid = 834
-print("URL", dr.get_image_url(gid))
-print("Q", dr.get_questions(gid))
+gid = randint(0,10000)
+print("URL:", dr.get_image_url(gid))
+print("Mode: ", search_mode)
+#print("Q", dr.get_questions(gid))
 
 visual_features_batch = get_batch_visual_features(dr, [gid], visual_features_dim)
 
@@ -73,32 +77,64 @@ padded_sos = pad_sos(sos_token, pad_token, length, batch_size)
 for k in range(topk):
     encoder_model.init_hidden(train_batch=0)
     for n in range(n_questions):
-        for l in range(length+1):
+        for l in range(length):
+
             if l == 0:
 
                 _, encoder_hidden_state     = encoder_model(padded_sos, visual_features_batch)
                 decoder_out                 = decoder_model(visual_features_batch, encoder_hidden_state, sos_embedding)
-                wp, w_id                    = decoder_out.topk(topk)
-                wp, w_id                    = wp.data.numpy()[0][k], int(w_id.data.numpy()[0][k])
 
-                seq_p[k][n] += wp
-                seq_w[k][n] += index2word[str(w_id)] + ' '
+                if search_mode == 'beam':
+                    wp, w_id                    = decoder_out.topk(topk)
+                    wp, w_id                    = wp.data.numpy()[0][k], int(w_id.data.numpy()[0][k])
+                    seq_p[k][n] += wp
+                    seq_w[k][n] += index2word[str(w_id)] + ' '
+
+                elif search_mode == 'sample':
+                    w_id    = torch.multinomial(torch.exp(decoder_out), 1)
+                    wp      = decoder_out.data[0,w_id.data[0,0]]
+                    seq_p[k][n] += wp
+                    seq_w[k][n] += index2word[str(w_id.data[0,0])] + ' '
 
 
             else:
                 enc_in = torch.ones(length+1, 1, out=torch.LongTensor()) * pad_token
-                enc_in[0,0] = w_id
+
+                enc_in[0,0] = w_id.data[0,0] if search_mode == 'sample' else w_id
 
                 _, encoder_hidden_state     = encoder_model(enc_in, visual_features_batch)
                 decoder_out                 = decoder_model(visual_features_batch, encoder_hidden_state)
-                wp, w_id                    = decoder_out.topk(1)
-                wp, w_id                    = wp.data.numpy()[0][0], int(w_id.data.numpy()[0][0])
+                if search_mode == 'beam':
+                    wp, w_id                    = decoder_out.topk(topk)
+                    wp, w_id                    = wp.data.numpy()[0][k], int(w_id.data.numpy()[0][k])
+                    seq_p[k][n] += wp
+                    seq_w[k][n] += index2word[str(w_id)] + ' '
 
-                seq_p[k][n] += wp
-                seq_w[k][n] += index2word[str(w_id)] + ' '
+                    if index2word[str(w_id)] == '-EOS-':
+                        # add answer
+                        if random() <= 0.7:
+                            seq_w[k][n] += 'No'
+                        else:
+                            seq_w[k][n] += 'Yes'
 
-                if index2word[str(w_id)] == '-EOS-':
-                    break
+                        break
+
+                elif search_mode == 'sample':
+                    w_id    = torch.multinomial(torch.exp(decoder_out), 1)
+                    wp      = decoder_out.data[0,w_id.data[0,0]]
+                    seq_p[k][n] += wp
+                    seq_w[k][n] += index2word[str(w_id.data[0,0])] + ' '
+
+                    if index2word[str(w_id.data[0,0])] == '-EOS-':
+                        # add answer
+                        if random() <= 0.7:
+                            seq_w[k][n] += 'No'
+                        else:
+                            seq_w[k][n] += 'Yes'
+
+                        break
+
+
 
 
 print(seq_p)
