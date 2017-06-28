@@ -37,8 +37,8 @@ dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_path=im
 # General
 my_sys                  = getpass.getuser() == 'nabi'
 length                  = 11
-logging                 = True #if my_sys else False
-save_models             = True #if my_sys else False
+logging                 = True if my_sys else False
+save_models             = True if my_sys else False
 
 # LSTM
 word2index              = dr.get_word2ind()
@@ -155,6 +155,9 @@ for epoch in range(iterations):
     		lstm_optimizer.step()
     	else:
     		lstm_epoch_loss_validation = torch.cat([lstm_epoch_loss_validation, game_loss.data])
+
+    	if(gid%2500==0 and gid>1):
+    		print("GID: "+gid+" Done")
 
 
     print("Epoch %03d, Time taken %.2f, Training-Loss %.5f, Validation-Loss %.5f" %(epoch, time()-start,torch.mean(lstm_epoch_loss), torch.mean(lstm_epoch_loss_validation)))       
