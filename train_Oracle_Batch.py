@@ -221,8 +221,8 @@ def train():
                 oracle_epoch_loss = torch.cat([oracle_epoch_loss, cost.data])
     
             # Backpropogate Errors 
-            optimizer.step()
             cost.backward()
+            optimizer.step()
             optimizer.zero_grad() 
 
             if iterations % 1 == 0:
@@ -240,7 +240,7 @@ def train():
         file.write("\tValidation loss: " + str(torch.mean(oracle_epoch_loss_valid)) + "\n\n")
         file.flush()
 
-        torch.save(model.state_dict(), 'Models/bin/oracle_model_v2_epoch_' + str(epoch))
+        torch.save(model.state_dict(), 'Models/bin/oracle_model_e1_epoch_' + str(epoch))
 
 
 if __name__ == '__main__':
