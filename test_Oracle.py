@@ -84,7 +84,7 @@ def main():
 
     #Instance of Oracle om LSTM en MLP te runnen?
     model = Oracle(vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index)
-    model.load_state_dict(torch.load('oracle_model_epoch_10'))
+    model.load_state_dict(torch.load('Models/bin/oracle_model_epoch_10'))
 
     if use_cuda:
         model.cuda()
