@@ -88,8 +88,8 @@ def train():
     batch_size = 1000
 
     #Instance of Oracle om LSTM en MLP te runnen?
-    model = Oracle(vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hidden_2, d_hidden3, d_hout, d_out, word2index, batch_size)
-    model.load_state_dict(torch.load('Models/bin/oracle_model_epoch_5'))
+    model = Oracle(vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hidden2, d_hidden3, d_hout, d_out, word2index, batch_size)
+    # model.load_state_dict(torch.load('Models/bin/oracle_model_epoch_5'))
     
     # Are we using cuda?
     if use_cuda:
