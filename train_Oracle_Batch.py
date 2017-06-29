@@ -102,7 +102,7 @@ def train():
     loss = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.0001)
 
-    if os.dir.exists(gameids_oracle_train.p):
+    if os.path.exists('gameids_oracle_train.p'):
         with open('gameids_oracle_train.p', 'rb') as f:
             gameids_train = pickle.load(f)
 
