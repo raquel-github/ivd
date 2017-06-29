@@ -88,7 +88,7 @@ def train():
     d_hidden3 = (d_hidden2+d_out)/2
     d_hout = (d_hidden3+d_out)/2
 
-    batch_size = 1000
+    batch_size = 5
 
     #Instance of Oracle om LSTM en MLP te runnen?
     model = Oracle(vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hidden2, d_hidden3, d_hout, d_out, word2index, batch_size)
@@ -145,10 +145,10 @@ def train():
             # oracle_epoch_loss_valid = torch.Tensor()
 
         # Create the batches
-        # batches = create_batches(gameids_train, batch_size)
+        batches = create_batches(gameids_train, batch_size)
         # batches_val = create_batches(gameids_val, batch_size) 
         
-        batches = [1,2,3,4,5]
+        # batches = [1,2,3,4,5]
 
         # Print epoch number
         file.write("\nEpoch number %d\n" % (epoch))
@@ -225,8 +225,8 @@ def train():
             oracle_epoch_loss = torch.cat([oracle_epoch_loss, cost.data])
     
             # Backpropogate Errors 
-            optimizer.step()
             cost.backward()
+            optimizer.step()
             optimizer.zero_grad() 
 
             if iterations % 1 == 0:
