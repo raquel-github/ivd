@@ -80,7 +80,7 @@ def main():
     # d_hout = (d_hidden+d_out)/2
     d_hout = (d_hidden+d_out)/2
 
-    
+
 
     #Instance of Oracle om LSTM en MLP te runnen?
     model = Oracle(vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index)
@@ -115,7 +115,10 @@ def main():
 
         for qi, question in enumerate(quas):
             outputs = model(question, spatial, object_class, crop, image)
-            a_id = np.argmax(outputs.data.numpy())
+            if use_cuda:
+                a_id = np.argmax(outputs.data.cpu().numpy())
+            else:
+                a_id = np.argmax(outputs.data.numpy())
 
 
             # print(answer.data.numpy())
