@@ -88,6 +88,12 @@ for gid in game_ids:
             with open(tgt_train, 'a') as tgt_train_file:
                 tgt_train_file.write(tgt + '\n')
 
+        else:
+            with open(src_valid, 'a') as src_valid_file:
+                src_valid_file.write(src + '\n')
+            with open(tgt_valid, 'a') as tgt_valid_file:
+                tgt_valid_file.write(tgt + '\n')
+
     tracker += 1
 
     if tracker % 5000 == 0 and tracker > 0:
