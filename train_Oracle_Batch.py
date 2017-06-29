@@ -215,8 +215,11 @@ def train():
 
             if iterations % 10 == 0:
                 file.write("Epoch %d, in iteration %d" % (epoch, iterations))
-                file.write("\tTime:" + str(time()-start) + " \n\tLoss:" + str(torch.mean(oracle_epoch_loss)) + "\n")
-                file.write("\tValidation loss: " + str(torch.mean(oracle_epoch_loss_valid)) + "\n")
+                file.write("\tTime:" + str(time()-start))
+                if oracle_epoch_loss.dim() > 0:
+                    file.write("\n\tLoss:" + str(torch.mean(oracle_epoch_loss)))
+                if oracle_epoch_loss_valid.dim() > 0:
+                    file.write("\n\tValidation loss: " + str(torch.mean(oracle_epoch_loss_valid)) + "\n")
                 file.flush()
 
             iterations += 1
