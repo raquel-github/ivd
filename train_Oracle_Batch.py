@@ -100,21 +100,27 @@ def train():
     loss = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.0001)
 
-    # Get the game IDs
-    gameids = dr.get_game_ids()
-    # gameids = range(250)
+    if os.dir.exists(gameids_oracle_train.p):
 
-    # Split games in validation and training set
-    gameids_val = list(np.random.choice(gameids, int(train_val_ratio*len(gameids))))
-    gameids_train = [gid for gid in gameids if gid not in gameids_val]
+    else:
+        # Get the game IDs
+        gameids = dr.get_game_ids()
+        # gameids = range(250)
 
-    with open('gameids_oracle_train.p', 'wb') as f:
-        pickle.dump(gameids_train, f)
+        # Split games in validation and training set
+        gameids_val = list(np.random.choice(gameids, int(train_val_ratio*len(gameids))))
+        gameids_train = [gid for gid in gameids if gid not in gameids_val]
 
-    with open('gameids_oracle_valid.p', 'wb') as f:
-        pickle.dump(gameids_val, f)
+        with open('gameids_oracle_train.p', 'wb') as f:
+            pickle.dump(gameids_train, f)
+
+        with open('gameids_oracle_valid.p', 'wb') as f:
+            pickle.dump(gameids_val, f)
 
     file = open('oracle_v2_training_log.log', 'a')
+
+    file.write("\n\n=========== NEW RUN =============\n\n")
+    file.flush()
 
     # Run epochs
     for epoch in range(max_iter):
@@ -213,8 +219,8 @@ def train():
             cost.backward()
             optimizer.zero_grad() 
 
-            if iterations % 10 == 0:
-                file.write("Epoch %d, in iteration %d" % (epoch, iterations))
+            if iterations % 1 == 0:
+                file.write("\nEpoch %d, in iteration %d" % (epoch, iterations))
                 file.write("\tTime:" + str(time()-start))
                 if oracle_epoch_loss.dim() > 0:
                     file.write("\n\tLoss:" + str(torch.mean(oracle_epoch_loss)))
