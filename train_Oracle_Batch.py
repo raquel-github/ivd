@@ -98,7 +98,7 @@ def train():
 
     # Create loss and optimizer object
     loss = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.000003)
+    optimizer = optim.Adam(model.parameters(), lr=0.0001)
 
     # Get the game IDs
     gameids = dr.get_game_ids()
@@ -134,6 +134,8 @@ def train():
         # Print epoch number
         file.write("\nEpoch number %d\n" % (epoch))
         file.flush()
+
+        iterations = 0
 
         # Loop over batches
         for batch in np.vstack([batches, batches_val]):
@@ -208,8 +210,16 @@ def train():
             cost.backward()
             optimizer.zero_grad() 
 
-        file.write("\tTime:" + str(time()-start) + " \n\tLoss:" + str(torch.mean(oracle_epoch_loss)) + "\n")
-        file.write("\tValidation loss: " + str(torch.mean(oracle_epoch_loss_valid)) + "\n")
+            if iterations % 10 == 0:
+                file.write("Epoch %d, in iteration %d" % (epoch, iterations))
+                file.write("\tTime:" + str(time()-start) + " \n\tLoss:" + str(torch.mean(oracle_epoch_loss)) + "\n")
+                file.write("\tValidation loss: " + str(torch.mean(oracle_epoch_loss_valid)) + "\n")
+                file.flush()
+
+            iterations += 1
+
+        file.write("\nTotal:\n\tTime:" + str(time()-start) + " \n\tLoss:" + str(torch.mean(oracle_epoch_loss)) + "\n")
+        file.write("\tValidation loss: " + str(torch.mean(oracle_epoch_loss_valid)) + "\n\n")
         file.flush()
 
         torch.save(model.state_dict(), 'Models/bin/oracle_model_v2_epoch_' + str(epoch))
