@@ -70,7 +70,8 @@ torch.manual_seed(opt.seed)
 
 
 def makeVocabulary(filename, size):
-    vocab = onmt.Dict([onmt.Constants.PAD_WORD, onmt.Constants.UNK_WORD],
+    vocab = onmt.Dict([onmt.Constants.PAD_WORD, onmt.Constants.UNK_WORD,
+                       onmt.Constants.BOS_WORD, onmt.Constants.EOS_WORD],
                       lower=opt.lower)
 
     with open(filename) as f:
@@ -163,7 +164,9 @@ def makeData(srcFile, tgtFile, srcDicts, tgtDicts):
                     Image.open(opt.src_img_dir + "/" + srcWords[0]))]
 
             tgt += [tgtDicts.convertToIdx(tgtWords,
-                                          onmt.Constants.UNK_WORD)]
+                                          onmt.Constants.UNK_WORD,
+                                          onmt.Constants.BOS_WORD,
+                                          onmt.Constants.EOS_WORD)]
             sizes += [len(srcWords)]
         else:
             ignored += 1
