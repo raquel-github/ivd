@@ -101,7 +101,11 @@ def train():
     optimizer = optim.Adam(model.parameters(), lr=0.0001)
 
     if os.dir.exists(gameids_oracle_train.p):
+        with open('gameids_oracle_train.p', 'rb') as f:
+            gameids_train = pickle.load(f)
 
+        with open('gameids_oracle_valid.p', 'rb') as f:
+            gameids_val = pickle.load(f)
     else:
         # Get the game IDs
         gameids = dr.get_game_ids()
