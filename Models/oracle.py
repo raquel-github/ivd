@@ -120,10 +120,10 @@ class Oracle(nn.Module):
         return mlp_out 
 
 class OracleBatch(Oracle):
-    def __init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size):
-        Oracle.__init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size)
-    # def __init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hidden_2, d_hidden3, d_hout, d_out, word2index, batch_size):
-    #     Oracle.__init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hidden_2, d_hidden3, d_hout, d_out, word2index, batch_size)
+    # def __init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size):
+    #     Oracle.__init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size)
+    def __init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hidden_2, d_hidden3, d_hout, d_out, word2index, batch_size):
+        Oracle.__init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hidden_2, d_hidden3, d_hout, d_out, word2index, batch_size)
 
     def forward(self, question, spatial, object_class, crop, image, num):
 
