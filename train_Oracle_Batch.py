@@ -153,7 +153,7 @@ def train():
         iterations = 0
 
         # Loop over batches
-        for batch in np.vstack([batches, batches_val]):
+        for batch in np.vstack([batches]):
 
             # Save statistics about the images
             corresponding_gids = []
