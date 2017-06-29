@@ -2,6 +2,7 @@ from DataReader import DataReader
 import numpy as np
 import pickle
 import os
+from time import time
 
 data_path       = '../ivd_data/preprocessed.h5'
 indicies_path   = '../ivd_data/indices.json'
@@ -17,8 +18,9 @@ tgt_valid       = 'data/gw_tgt_valid'
 # parameters
 length          = 15
 train_val_ratio = 0.1
+n_games_to_train= '_ALL'
 sos_token_stirng= '-SOS-'
-n_games_to_train='ALL'
+
 # get all games
 game_ids = dr.get_game_ids()
 
@@ -47,8 +49,7 @@ if not os.path.isfile('test_game_ids'+str(n_games_to_train)+'.p'):
     for _gid in _game_ids:
         if dr.get_success(_gid) == 1:
             game_ids.append(_gid)
-        else:
-            break
+
 
     pickle.dump(game_ids, open('test_game_ids'+str(n_games_to_train)+'.p', 'wb'))
 else:
@@ -59,8 +60,10 @@ print '%i games loaded with max question length %i' %(len(game_ids), length)
 # create training and validation set
 game_ids_val    = list(np.random.choice(game_ids, int(train_val_ratio*len(game_ids))))
 game_ids_train  = [gid for gid in game_ids if gid not in game_ids_val]
-
+start = time()
+tracker = 0
 for gid in game_ids:
+
     train_game = gid in game_ids_train
 
     questions   = dr.get_questions(gid)
@@ -84,3 +87,9 @@ for gid in game_ids:
                 src_train_file.write(src + '\n')
             with open(tgt_train, 'a') as tgt_train_file:
                 tgt_train_file.write(tgt + '\n')
+
+    tracker += 1
+
+    if tracker % 5000 == 0 and tracker > 0:
+        print 'Games done: %i, Time %.2f' %(tracker, time()-start)
+        start = time()
