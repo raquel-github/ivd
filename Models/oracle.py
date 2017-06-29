@@ -19,7 +19,8 @@ class Oracle(nn.Module):
     # d_hin/d_hidden/d_hout: dimenties van hidden layer: 
     # --- helft van de dimensies die het verbind, recursively, voor gradual overgang.
     # d_out: 3 (Yes,No,N/A)
-    def __init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hidden2, d_hidden3, d_hout, d_out, word2index, batch_size=1):
+    # def __init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hidden2, d_hidden3, d_hout, d_out, word2index, batch_size=1):
+    def __init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size=1):
         super(Oracle, self).__init__()
         self.hidden_dim = hidden_dim
         self.vocab_size = vocab_size
@@ -47,11 +48,12 @@ class Oracle(nn.Module):
             nn.ReLU(), 
             nn.Linear(int(d_hin), int(d_hidden)), 
             nn.ReLU(), 
-            nn.Linear(int(d_hidden), int(d_hidden2)),
-            nn.ReLU(), 
-            nn.Linear(int(d_hidden2), int(d_hidden3)),
-            nn.ReLU(), 
-            nn.Linear(int(d_hidden3), int(d_hout)),
+            nn.Linear(int(d_hidden), int(d_hout)),
+            # nn.Linear(int(d_hidden), int(d_hidden2)),
+            # nn.ReLU(), 
+            # nn.Linear(int(d_hidden2), int(d_hidden3)),
+            # nn.ReLU(), 
+            # nn.Linear(int(d_hidden3), int(d_hout)),
             nn.ReLU(),
             nn.Linear(int(d_hout), int(d_out))
         )
@@ -118,8 +120,10 @@ class Oracle(nn.Module):
         return mlp_out 
 
 class OracleBatch(Oracle):
-    def __init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hidden_2, d_hidden3, d_hout, d_out, word2index, batch_size):
-        Oracle.__init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hidden_2, d_hidden3, d_hout, d_out, word2index, batch_size)
+    def __init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size):
+        Oracle.__init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size)
+    # def __init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hidden_2, d_hidden3, d_hout, d_out, word2index, batch_size):
+    #     Oracle.__init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hidden_2, d_hidden3, d_hout, d_out, word2index, batch_size)
 
     def forward(self, question, spatial, object_class, crop, image, num):
 

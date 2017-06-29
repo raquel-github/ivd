@@ -76,13 +76,16 @@ def train():
     #Settings MLP
     d_out = 3
     d_in = visual_len + spatial_len + object_embedding_dim + hidden_dim + object_len
+    # d_hin = (d_in+d_out)/4 
     d_hin = (d_in+d_out)/4 
     d_hidden = (d_hin+d_out)/2
+    # d_hout = (d_hidden+d_out)/2
     d_hout = (d_hidden+d_out)/2
 
     #Instance of Oracle om LSTM en MLP te runnen?
-    model = Oracle(vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index)
-    
+    # model = Oracle(vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index)
+    model = Oracle(vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size)
+
     if use_cuda:
         model.cuda()
 
