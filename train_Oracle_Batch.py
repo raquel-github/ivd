@@ -108,10 +108,10 @@ def train():
     gameids_val = list(np.random.choice(gameids, int(train_val_ratio*len(gameids))))
     gameids_train = [gid for gid in gameids if gid not in gameids_val]
 
-    with open('gameids_oracle_train.p', 'w') as f:
+    with open('gameids_oracle_train.p', 'wb') as f:
         pickle.dump(gameids_train, f)
 
-    with open('gameids_oracle_valid.p', 'w') as f:
+    with open('gameids_oracle_valid.p', 'wb') as f:
         pickle.dump(gameids_val, f)
 
     file = open('oracle_v2_training_log.log', 'a')
