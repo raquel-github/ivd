@@ -81,8 +81,8 @@ def train():
     d_in = visual_len + spatial_len + object_embedding_dim + hidden_dim + object_len
     d_hin = (d_in+d_out)/2 
     d_hidden = (d_hin+d_out)/2
-	d_hidden2 = (d_hidden+d_out)/2
-	d_hidden3 = (d_hidden2+d_out)/2
+    d_hidden2 = (d_hidden+d_out)/2
+    d_hidden3 = (d_hidden2+d_out)/2
     d_hout = (d_hidden3+d_out)/2
 
     batch_size = 1000
