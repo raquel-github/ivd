@@ -11,6 +11,7 @@ from torch.autograd import Variable
 import numpy as np
 import h5py
 from time import time
+import pickle
 
 from Models.oracle import OracleBatch as Oracle
 from Models.Guesser import Guesser
@@ -107,10 +108,13 @@ def train():
     gameids_val = list(np.random.choice(gameids, int(train_val_ratio*len(gameids))))
     gameids_train = [gid for gid in gameids if gid not in gameids_val]
 
-    file = open('oracle_training_log.log', 'w')
+    pickle.dump(gameids_train, 'gameids_oracle_train.p', 'wb')
+    pickle.dump(gameids_train, 'gameids_oracle_valid.p', 'wb')
+
+    file = open('oracle_v2_training_log.log', 'a')
 
     # Run epochs
-    for epoch in range(7, max_iter):
+    for epoch in range(max_iter):
 
         # Save start time
         start = time()
@@ -128,7 +132,7 @@ def train():
         batches_val = create_batches(gameids_val, batch_size) 
         
         # Print epoch number
-        file.write("Epoch number %d" % (epoch))
+        file.write("\nEpoch number %d\n" % (epoch))
         file.flush()
 
         # Loop over batches
@@ -204,11 +208,11 @@ def train():
             cost.backward()
             optimizer.zero_grad() 
 
-        file.write("time:" + str(time()-start) + " \n Loss:" + str(torch.mean(oracle_epoch_loss)))
-        file.write("Validation loss: " + str(torch.mean(oracle_epoch_loss_valid)))
+        file.write("\tTime:" + str(time()-start) + " \n\tLoss:" + str(torch.mean(oracle_epoch_loss)) + "\n")
+        file.write("\tValidation loss: " + str(torch.mean(oracle_epoch_loss_valid)) + "\n")
         file.flush()
 
-        torch.save(model.state_dict(), 'Models/bin/oracle_model_epoch_' + str(epoch))
+        torch.save(model.state_dict(), 'Models/bin/oracle_model_v2_epoch_' + str(epoch))
 
 
 if __name__ == '__main__':
