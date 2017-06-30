@@ -13,7 +13,7 @@ class BCELossReg(nn.Module):
 
     def __init__(self, ratio=1, size_averaged=True):
         """
-        :param ratio: type int
+        :param ratio: int, 0<=r<=1, defines ratio of weighted sum
         :param size_averaged: average for number of training examples
         """
         assert type(r) == float, f'Expected float type for r, got {type(ratio)}'
@@ -29,7 +29,7 @@ class BCELossReg(nn.Module):
         """
         :param input: according to nn.BCELoss()
         :param target: according to nn.BCELoss()
-        :param n: int
+        :param n: int, multiplyer for (1-ratio) part of weighted sum
         """
         assert type(n) == int, f'Expected int type for n, got {type(n)}'
         n = Variable(torch.Tensor([n]))
