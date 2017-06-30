@@ -71,19 +71,19 @@ def main():
     #Settings LSTM
     hidden_dim = 512
     
-   #Settings MLP
+    #Settings MLP
     d_out = 3
     d_in = visual_len + spatial_len + object_embedding_dim + hidden_dim + object_len
-    # d_hin = (d_in+d_out)/4 
-    d_hin = (d_in+d_out)/4 
+    d_hin = (d_in+d_out)/2 
     d_hidden = (d_hin+d_out)/2
-    # d_hout = (d_hidden+d_out)/2
-    d_hout = (d_hidden+d_out)/2
+    d_hidden2 = (d_hidden+d_out)/2
+    d_hidden3 = (d_hidden2+d_out)/2
+    d_hout = (d_hidden3+d_out)/2
 
-
+    batch_size = 64
 
     #Instance of Oracle om LSTM en MLP te runnen?
-    model = Oracle(vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index)
+    model = Oracle(vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hidden2, d_hidden3, d_hout, d_out, word2index, batch_size)
     model.load_state_dict(torch.load('Models/bin/oracle_model_e2_epoch_1'))
 
     if use_cuda:
