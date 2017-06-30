@@ -55,7 +55,7 @@ if not os.path.isfile('test_game_ids'+str(n_games_to_train)+'.p'):
 else:
     game_ids = pickle.load(open('test_game_ids'+str(n_games_to_train)+'.p', 'rb'))
 
-print '%i games loaded with max question length %i' %(len(game_ids), length)
+print('%i games loaded with max question length %i' %(len(game_ids), length))
 
 # create training and validation set
 game_ids_val    = list(np.random.choice(game_ids, int(train_val_ratio*len(game_ids))))
@@ -97,5 +97,5 @@ for gid in game_ids:
     tracker += 1
 
     if tracker % 5000 == 0 and tracker > 0:
-        print 'Games done: %i, Time %.2f' %(tracker, time()-start)
+        print('Games done: %i, Time %.2f' %(tracker, time()-start))
         start = time()

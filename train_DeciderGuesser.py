@@ -16,11 +16,13 @@ import numpy as np
 from time import time
 from random import random
 
-from Models.Guesser import Guesser
-from Models.Decider import Decider
+from ivdModels.Guesser import Guesser
+from ivdModels.Decider import Decider
+from ivdModels.oracle import OracleBatch as Oracle
 
-from Preprocessing.DataReader import DataReader
-from Preprocessing.BatchUtil2 import pad_sos, get_game_ids_with_max_length
+from DataReader import DataReader
+# from create_data import get_game_ids_with_max_length
+# from Preprocessing.BatchUtil2 import pad_sos, get_game_ids_with_max_length
 
 use_cuda = torch.cuda.is_available()
 # use_cuda = False
@@ -28,8 +30,9 @@ use_cuda = torch.cuda.is_available()
 data_path               = "../ivd_data/preprocessed.h5"
 indicies_path           = "../ivd_data/indices.json"
 images_features_path    = "../ivd_data/image_features.h5"
+crop_features_path      = "../ivd_data/image_features_crops.h5" 
 
-dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_features_path=images_features_path)
+dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_features_path=images_features_path, crop_features_path = crop_features_path)
 
 ### Hyperparamters
 my_sys                  = getpass.getuser() != 'nabi'
@@ -41,15 +44,243 @@ save_models             = False if my_sys else True
 opt = argparse.Namespace()
 opt.batch_size 			= 1
 opt.beam_size 			= 5
-gpu						= 0
-max_sent_length 		= 100
-replace_unk 			= True
-tgt						= None
-model 					= '../OpenNMT_Models/gw2-model_acc_76.87_ppl_3.02_e11.pt'
+opt.gpu					= 0
+opt.max_sent_length 	= 100
+opt.replace_unk 		= True
+opt.tgt					= None
+opt.n_best 				= 1
+opt.model 				= '../OpenNMT_Models/gw2-model_acc_76.87_ppl_3.02_e11.pt'
 
  # Namespace(batch_size=30, beam_size=5, dump_beam='', gpu=-1, max_sent_length=100, model='../OpenNMT_Models/gw2-model_acc_76.76_ppl_3.04_e9.pt', n_best=1, output='../OpenNMT_Models/output/1.txt', replace_unk=True, src='data/1', src_img_dir='', tgt=None, verbose=True)
 
+# Guesser
+hidden_encoder_dim		= 500
+categories_length 		= dr.get_categories_length()
+cat2id 					= dr.get_cat2id()
+object_embedding_dim 	= 20
 
- opt.cuda = opt.gpu > -1
-    if opt.cuda:
-        torch.cuda.set_device(opt.gpu)
+
+# Oracle
+word2index              = dr.get_word2ind()
+vocab_size              = len(word2index)
+embedding_dim 		    = 512
+hidden_dim 				= 512
+oracle_model_path		= '../OpenNMT_Models/oracle_model_epoch_10'
+visual_len				= 4096
+object_len 				= 4096 
+spatial_len 			= 8
+d_out 					= 3
+d_in 					= visual_len + spatial_len + object_embedding_dim + hidden_dim + object_len
+d_hin 					= (d_in+d_out)/4 
+d_hidden 				= (d_hin+d_out)/2
+d_hout 					= (d_hidden+d_out)/2
+ans2id 					= {"Yes": 0,"No": 1,"N/A": 2}
+
+# Training
+iterations              = 100
+decider_lr              = 0.0001
+guesser_lr              = 0.0001
+grad_clip               = 50.
+train_val_ratio         = 0.1
+batch_size				= 1 if my_sys else 1
+n_games_to_train		= 20
+
+
+# prune games
+def get_game_ids_with_max_length(length):
+    """ return all game ids where all questions are smaller then the given length """
+
+    valid_games = list()
+
+    for gid in dr.get_game_ids():
+        candidate = True
+        for q in dr.get_questions(gid):
+            if len(q.split()) > length:
+                candidate = False
+                break
+
+        if candidate:
+            valid_games.append(gid)
+
+    return valid_games
+
+
+decider_model = Decider(hidden_encoder_dim)
+guesser_model = Guesser(hidden_encoder_dim, categories_length+1, cat2id, object_embedding_dim)
+oracle 		  = Oracle(vocab_size, embedding_dim, categories_length+1, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size=1)
+
+if use_cuda:
+	oracle.load_state_dict(torch.load(oracle_model_path))
+	decider_model.cuda()
+	guesser_model.cuda()
+	# print(oracle)
+else:
+	oracle.load_state_dict(torch.load(oracle_model_path, map_location=lambda storage, loc: storage))
+
+opt.cuda = opt.gpu > -1
+if opt.cuda:
+    torch.cuda.set_device(opt.gpu)
+
+translator = onmt.Translator(opt)
+
+# for param in oracle.parameters():
+# 	param.requires_grad = False
+
+# for param in oracle.parameters():
+# 	param.requires_grad = False
+
+decider_loss_function = nn.BCELoss()
+guesser_loss_function = nn.NLLLoss()
+
+decider_optimizer = optim.Adam(decider_model.parameters(), decider_lr)
+guesser_optimizer = optim.Adam(guesser_model.parameters(), guesser_lr)
+
+if not os.path.isfile('test_game_ids'+str(n_games_to_train)+'.p'):
+    _game_ids = get_game_ids_with_max_length(length)
+    game_ids = list()
+    # get only successful games
+    for _gid in _game_ids:
+        if dr.get_success(_gid) == 1:
+            if len(game_ids) < n_games_to_train:
+                game_ids.append(_gid)
+            else:
+                break
+
+    pickle.dump(game_ids, open('test_game_ids'+str(n_games_to_train)+'.p', 'wb'))
+else:
+    game_ids = pickle.load(open('test_game_ids'+str(n_games_to_train)+'.p', 'rb'))
+
+
+
+print("Valid game ids done. Number of valid games: ", len(game_ids))
+
+
+# make training validation split
+game_ids_val = list(np.random.choice(game_ids, int(train_val_ratio*len(game_ids))))
+game_ids_train = [gid for gid in game_ids if gid not in game_ids_val]
+
+
+for epoch in range(iterations):
+	print("Epoch: ",epoch)
+	start = time()
+	if use_cuda:
+		guesser_epoch_loss 		= torch.cuda.FloatTensor()
+		guesser_epoch_loss_vali = torch.cuda.FloatTensor()
+		decider_epoch_loss 		= torch.cuda.FloatTensor()
+		decider_epoch_loss_vali = torch.cuda.FloatTensor()
+	else:
+		guesser_epoch_loss 		= torch.FloatTensor()
+		guesser_epoch_loss_vali = torch.FloatTensor()
+		decider_epoch_loss 		= torch.FloatTensor()
+		decider_epoch_loss_vali = torch.FloatTensor()
+
+
+	for gid in game_ids_train+game_ids_val:
+
+		decider_optimizer.zero_grad()
+		guesser_optimizer.zero_grad()
+
+		guesser_loss = 0
+		decider_loss = 0
+
+		train_game = gid in game_ids_train
+
+		if use_cuda:
+			visual_features = Variable(torch.Tensor(dr.get_image_features(gid)), requires_grad=False).cuda().view(1,-1)
+			crop_features	= Variable(torch.Tensor(dr.get_crop_features(gid)), requires_grad=False).cuda().view(1,-1)
+		else:
+			visual_features = Variable(torch.Tensor(dr.get_image_features(gid)), requires_grad=False).view(1,-1)
+			crop_features	= Variable(torch.Tensor(dr.get_crop_features(gid)), requires_grad=False).view(1,-1)
+
+		# Data required for the guesser
+		img_meta 			= dr.get_image_meta(gid)
+		object_categories 	= torch.LongTensor(list(map(int, dr.get_category_id(gid))))
+		object_ids 			= dr.get_object_ids(gid)
+		# get guesser target object
+		correct_obj_id  	= dr.get_target_object(gid)
+		target_guess 		= object_ids.index(correct_obj_id)
+
+		object_spatials		= guesser_model.img_spatial(img_meta)
+
+		spatial 			= object_spatials[target_guess]
+		object_class 		= [object_categories[target_guess]]
+
+		question_number = 0
+
+		print("Data Loaded")
+
+		tgtBatch = [] # For OpenNMT
+
+			### Produce Questions Until Decision To Guess
+		while True:
+ 			# Decider here
+			if question_number == 0:
+				srcBatch = [['-SOS-']]
+				predBatch, _, _, encStates = translator.translate(srcBatch, tgtBatch)
+				srcBatch[0] += predBatch[0][0] 
+				orcale_question = [' '.join(predBatch[0][0][1:-1])]
+				print(orcale_question)
+				encoder_hidden_state = encStates[-1]#, requires_grad = False)
+			else:
+				predBatch, _, _, encStates = translator.translate(srcBatch, tgtBatch)
+				srcBatch[0] += predBatch[0][0] 
+				orcale_question = [' '.join(predBatch[0][0][1:-1])]
+				encoder_hidden_state = Variable(encStates[-1], requires_grad = False)
+
+
+			decision = decider_model(encoder_hidden_state)
+			print(decision)
+			decision.data[0,0] = 0.4	
+
+			if (decision.data[0,0] < 0.5) and question_number< 10:
+				print("Another Question!")
+				if use_cuda:
+					spatial = Variable(spatial, requires_grad = False).cuda()
+				else:
+					spatial = Variable(spatial, requires_grad = False)
+
+				out = oracle(orcale_question, spatial, object_class, crop_features, visual_features, num = 1)
+				print(out)
+			else:
+				break
+
+		### Guess And Backpropagate if training sample
+
+		# TODO: OpenNMT encoder here to be stored in encoder_hidden_state
+		guess = guesser_model(encoder_hidden_state, img_meta, object_categories)
+
+		# get best guess for decider target calc
+		_, guess_id = guess.data.topk(1)
+		guess_id 	= guess_id[0][0]
+
+		if use_cuda:
+			guesser_loss = guesser_loss_function(guess, Variable(torch.LongTensor([target_guess])).cuda())
+			decider_loss = decider_loss_function(decision, Variable(torch.Tensor([1 if guess_id == target_guess else 0])).cuda())
+			decider_loss = 0.9*decider_loss + 0.1*decider_loss*question_number # add regularization to decider
+		else:
+			guesser_loss = guesser_loss_function(guess, Variable(torch.LongTensor([target_guess])))
+			decider_loss = decider_loss_function(decision, Variable(torch.Tensor([1 if guess_id == target_guess else 0])))
+			decider_loss = 0.9*decider_loss + 0.1*decider_loss*question_number # add regularization to decider
+
+		if train_game:
+			guesser_loss.backward()
+			decider_loss.backward()
+
+			guesser_optimizer.step()
+			decider_optimizer.step()
+
+			guesser_epoch_loss = torch.cat([guesser_epoch_loss, guesser_loss.data])
+			decider_epoch_loss = torch.cat([decider_epoch_loss, decider_loss.data])
+		else:
+			guesser_epoch_loss_vali = torch.cat([guesser_epoch_loss_vali, guesser_loss.data])
+			decider_epoch_loss_vali = torch.cat([decider_epoch_loss_vali, decider_loss.data])
+
+
+	print("Epoch %03d, Time %.2f, Guesser Train Loss: %.4f, Guesser Vali Loss %.4f, Decider Train Loss %.4f, Decider Vali Loss %.4f" \
+		%(epoch, time()-start,torch.mean(guesser_epoch_loss), torch.mean(guesser_epoch_loss_vali), torch.mean(decider_epoch_loss), torch.mean(decider_epoch_loss_vali)))
+
+
+
+
+
+

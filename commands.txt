@@ -1,0 +1,10 @@
+python preprocess.py -train_src data/src-train.txt -train_tgt data/tgt-train.txt -valid_src data/src-val.txt -valid_tgt data/tgt-val.txt -save_data data/demo
+
+python train.py -data data/demo.train.pt -save_model demo-model 
+
+python translate.py -model demo-model_epochX_PPL.pt -src data/src-test.txt -output pred.txt -replace_unk -verbose
+
+ python3 translate.py -model ../OpenNMT_Models/gw2-model_acc_76.76_ppl_3.04_e9.pt -src data/1 -output ../OpenNMT_Models/output/1.txt -replace_unk -verbose
+
+
+ Namespace(batch_size=30, beam_size=5, dump_beam='', gpu=-1, max_sent_length=100, model='../OpenNMT_Models/gw2-model_acc_76.76_ppl_3.04_e9.pt', n_best=1, output='../OpenNMT_Models/output/1.txt', replace_unk=True, src='data/1', src_img_dir='', tgt=None, verbose=True)
