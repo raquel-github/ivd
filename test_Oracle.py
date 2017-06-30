@@ -84,7 +84,7 @@ def main():
 
     #Instance of Oracle om LSTM en MLP te runnen?
     model = Oracle(vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index)
-    model.load_state_dict(torch.load('Models/bin/oracle_model_epoch_10'))
+    model.load_state_dict(torch.load('Models/bin/oracle_model_e2_epoch_1'))
 
     if use_cuda:
         model.cuda()
@@ -140,7 +140,7 @@ def main():
 
             actual = ans2id[answers[qi]]
 
-            if (a_id == actual):
+            if (prediction == actual):
                 print("GOED")
                 correct_a += 1
             else:
