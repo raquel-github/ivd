@@ -6,6 +6,8 @@ import torch.optim as optim
 
 from torch.autograd import Variable
 
+import pickle
+
 import numpy as np
 import h5py
 from time import time
