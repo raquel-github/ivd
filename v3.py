@@ -237,7 +237,7 @@ def train():
             iterations += 1
 
         file.write("\nTotal:\n\tTime:" + str(time()-start) + " \n\tLoss:" + str(torch.mean(oracle_epoch_loss)) + "\n")
-        file.write("\tValidation loss: " + str(torch.mean(oracle_epoch_loss_valid)) + "\n\n")
+        # file.write("\tValidation loss: " + str(torch.mean(oracle_epoch_loss_valid)) + "\n\n")
         file.flush()
 
         torch.save(model.state_dict(), 'Models/bin/oracle_model_e3_epoch_' + str(epoch))
