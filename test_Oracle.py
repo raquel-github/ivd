@@ -89,13 +89,26 @@ def main():
     if use_cuda:
         model.cuda()
 
-    gameids = dr.get_game_ids()
+    # gameids = dr.get_game_ids()
     # print(gameids)
+
+    with open('gameids_oracle_valid.p', 'rb') as f:
+        gameids = pickle.load(f)
 
     # exit(0)
 
     correct_a = 0
     wrong = 0
+
+    is_yes = 0
+    correct_yes = 0
+    wrong_yes = 0
+    is_no = 0
+    correct_no = 0
+    wrong_no = 0
+    is_na = 0 
+    correct_na = 0
+    wrong_na = 0
 
     for gid in gameids:
         image = torch.Tensor(dr.get_image_features(gid))
@@ -116,31 +129,62 @@ def main():
         for qi, question in enumerate(quas):
             outputs = model(question, spatial, object_class, crop, image)
             if use_cuda:
-                a_id = np.argmax(outputs.data.cpu().numpy())
+                prediction = np.argmax(outputs.data.cpu().numpy())
             else:
-                a_id = np.argmax(outputs.data.numpy())
+                prediction = np.argmax(outputs.data.numpy())
 
 
             # print(answer.data.numpy())
             # print(answer.data)
             # print(ans2id[answers[qi]])
 
-            if (a_id == ans2id[answers[qi]]):
+            actual = ans2id[answers[qi]]
+
+            if (a_id == actual):
                 print("GOED")
                 correct_a += 1
             else:
                 print("FOUT")
                 wrong += 1
 
-            # print("=======================")
+            if prediction == 0:
+                if actual == 0:
+                    correct_yes += 1
+                else:
+                    wrong_yes += 1
+                is_yes += 1
 
-            # break
-        # break
-        # 
-        if gid > 10:
-            break
+            elif prediction == 1:
+                if actual == 1:
+                    correct_no += 1
+                else:
+                    wrong_no += 1
+                is_no += 1
 
-        ratio = float(correct_a) / float(correct_a + wrong)
+            elif prediction == 2:
+                if actual == 2:
+                    correct_na += 1
+                else:
+                    wrong_na += 1
+                is_na += 1
+
+
+            
+
+    ratio = float(correct_a) / float(correct_a + wrong)
+
+    print("correct_a: " + str(correct_a) + "\n")
+    print("wrong: " + str(wrong) + "\n")
+
+    print("is_yes: " + str(is_yes) + "\n")
+    print("correct_yes: " + str(correct_yes) + "\n")
+    print("wrong_yes: " + str(wrong_yes) + "\n")
+    print("is_no: " + str(is_no) + "\n")
+    print("correct_no: " + str(correct_no) + "\n")
+    print("wrong_no: " + str(wrong_no) + "\n")
+    print("is_na : " + str(is_na ) + "\n")
+    print("correct_na: " + str(correct_na) + "\n")
+    print("wrong_na: " + str(wrong_na) + "\n")
 
     print("%d/%d correct answers, %d wrong, ratio: %f" % (correct_a, correct_a + wrong, wrong, ratio))
 
