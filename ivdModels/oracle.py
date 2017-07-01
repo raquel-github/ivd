@@ -54,6 +54,11 @@ class Oracle(nn.Module):
             nn.Linear(int(d_hout), int(d_out))
         )
 
+        if use_cuda:
+            self.lstm.cuda()
+            self.mlp.cuda()
+
+
     def word2embedd(self, w):
         if use_cuda:
             return self.word_embeddings(Variable(torch.LongTensor([self.word2index[w]])).cuda())
@@ -127,6 +132,13 @@ class OracleBatch(Oracle):
         else:
             out = Variable(torch.Tensor(num, 3))
         
+        if use_cuda:
+            spatial = Variable(spatial, requires_grad = False).cuda()
+        else:
+            spatial = Variable(spatial, requires_grad = False)
+
+        spatial = [spatial]
+
         # Loop over all QA pairs
         for i in range(num):
 
@@ -161,13 +173,18 @@ class OracleBatch(Oracle):
             hidden_lstm = hidden[0].view(1,-1)
 
             #Get answer
-
+            # print('image_emb',image_emb.size())
+            # print('crop_emb',crop_emb.size())
+            # print('spatial_emb.data',spatial_emb.data.size())
+            # print('object_class_emb.data',object_class_emb.data.size())
+            # print('hidden_lstm.data',hidden_lstm.data.size())
             if use_cuda:
                 mlp_in = Variable(torch.cat([image_emb, crop_emb, spatial_emb.data, object_class_emb.data, hidden_lstm.data],dim=1)).cuda()
             else:
                 mlp_in = Variable(torch.cat([image_emb, crop_emb, spatial_emb.data, object_class_emb.data, hidden_lstm.data],dim=1))
 
             # MLP pass
+            # print(mlp_in.size())
             out[i] = self.mlp(mlp_in)
 
         # Return the results

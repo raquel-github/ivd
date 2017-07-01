@@ -113,7 +113,7 @@ if use_cuda:
 	oracle.load_state_dict(torch.load(oracle_model_path))
 	decider_model.cuda()
 	guesser_model.cuda()
-	# print(oracle)
+	print(oracle)
 else:
 	oracle.load_state_dict(torch.load(oracle_model_path, map_location=lambda storage, loc: storage))
 
@@ -123,10 +123,10 @@ if opt.cuda:
 
 translator = onmt.Translator(opt)
 
-# for param in oracle.parameters():
-# 	param.requires_grad = False
+for param in oracle.parameters():
+	param.requires_grad = False
 
-# for param in oracle.parameters():
+# for param in translator.parameters():
 # 	param.requires_grad = False
 
 decider_loss_function = nn.BCELoss()
@@ -220,7 +220,7 @@ for epoch in range(iterations):
 				srcBatch[0] += predBatch[0][0] 
 				orcale_question = [' '.join(predBatch[0][0][1:-1])]
 				print(orcale_question)
-				encoder_hidden_state = encStates[-1]#, requires_grad = False)
+				encoder_hidden_state = Variable(encStates[-1].data, requires_grad = False)
 			else:
 				predBatch, _, _, encStates = translator.translate(srcBatch, tgtBatch)
 				srcBatch[0] += predBatch[0][0] 
@@ -230,16 +230,11 @@ for epoch in range(iterations):
 
 			decision = decider_model(encoder_hidden_state)
 			print(decision)
-			decision.data[0,0] = 0.4	
+			decision.data[0,0] = 0.6	
 
 			if (decision.data[0,0] < 0.5) and question_number< 10:
 				print("Another Question!")
-				if use_cuda:
-					spatial = Variable(spatial, requires_grad = False).cuda()
-				else:
-					spatial = Variable(spatial, requires_grad = False)
-
-				out = oracle(orcale_question, spatial, object_class, crop_features, visual_features, num = 1)
+				out = oracle(orcale_question, spatial, object_class, crop_features.data, visual_features.data, num = 1)
 				print(out)
 			else:
 				break
@@ -247,7 +242,12 @@ for epoch in range(iterations):
 		### Guess And Backpropagate if training sample
 
 		# TODO: OpenNMT encoder here to be stored in encoder_hidden_state
-		guess = guesser_model(encoder_hidden_state, img_meta, object_categories)
+		if use_cuda:
+			object_spatials = Variable(object_spatials).cuda()
+		else:
+			object_spatials = Variable(object_spatials)
+
+		guess = guesser_model(encoder_hidden_state, object_spatials, object_categories)
 
 		# get best guess for decider target calc
 		_, guess_id = guess.data.topk(1)
