@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 
+use_cuda = torch.cuda.is_available()
+
 class BCELossReg(nn.Module):
     """
     implements binary corss entropy loss with additional regularization
@@ -16,14 +18,16 @@ class BCELossReg(nn.Module):
         :param ratio: int, 0<=r<=1, defines ratio of weighted sum
         :param size_averaged: average for number of training examples
         """
-        assert type(r) == float, f'Expected float type for r, got {type(ratio)}'
-        assert 0<= ratio <= 1, f'Expectted ratio between 0 and 1, got {ratio}'
+        assert type(ratio) == float, 'Expected float type for r, got {type(ratio)}'
+        assert 0<= ratio <= 1, 'Expectted ratio between 0 and 1, got {ratio}'
 
         super(BCELossReg, self).__init__()
 
         self.size_averaged = size_averaged
-        self.ratio = Variable(torch.Tensor([ratio]))
-        self.ratio.requires_grad = False
+        if use_cuda:
+            self.ratio = Variable(torch.Tensor([ratio]), requires_grad = False).cuda()
+        else:
+            self.ratio = Variable(torch.Tensor([ratio]), requires_grad = False)
 
     def forward(self, input, target, n):
         """
@@ -31,9 +35,12 @@ class BCELossReg(nn.Module):
         :param target: according to nn.BCELoss()
         :param n: int, multiplyer for (1-ratio) part of weighted sum
         """
-        assert type(n) == int, f'Expected int type for n, got {type(n)}'
-        n = Variable(torch.Tensor([n]))
-        n.requires_grad = False
+        assert type(n) == int, 'Expected int type for n, got {type(n)}'
+        if use_cuda:
+            n = Variable(torch.Tensor([n]), requires_grad = False).cuda()
+        else:
+            n = Variable(torch.Tensor([n]), requires_grad = False)
+        # n.requires_grad = False
 
         # compute the BCE Loss
         result = torch.nn.BCELoss(size_average=self.size_averaged)(input, target)

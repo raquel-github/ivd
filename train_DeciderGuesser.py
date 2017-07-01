@@ -21,6 +21,7 @@ from ivdModels.Decider import Decider
 from ivdModels.oracle import OracleBatch as Oracle
 
 from DataReader import DataReader
+from BCELossReg import BCELossReg
 # from create_data import get_game_ids_with_max_length
 # from Preprocessing.BatchUtil2 import pad_sos, get_game_ids_with_max_length
 
@@ -75,6 +76,7 @@ d_hin 					= (d_in+d_out)/4
 d_hidden 				= (d_hin+d_out)/2
 d_hout 					= (d_hidden+d_out)/2
 ans2id 					= {"Yes": 0,"No": 1,"N/A": 2}
+id2ans					= {0: "yes", 1: "no", 2:"n/a"}
 
 # Training
 iterations              = 100
@@ -109,10 +111,17 @@ decider_model = Decider(hidden_encoder_dim)
 guesser_model = Guesser(hidden_encoder_dim, categories_length+1, cat2id, object_embedding_dim)
 oracle 		  = Oracle(vocab_size, embedding_dim, categories_length+1, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size=1)
 
+decider_loss_function = BCELossReg(ratio=0.9)
+guesser_loss_function = nn.NLLLoss()
+
+decider_optimizer = optim.Adam(decider_model.parameters(), decider_lr)
+guesser_optimizer = optim.Adam(guesser_model.parameters(), guesser_lr)
+
 if use_cuda:
 	oracle.load_state_dict(torch.load(oracle_model_path))
 	decider_model.cuda()
 	guesser_model.cuda()
+	decider_loss_function.cuda()
 	print(oracle)
 else:
 	oracle.load_state_dict(torch.load(oracle_model_path, map_location=lambda storage, loc: storage))
@@ -129,11 +138,6 @@ for param in oracle.parameters():
 # for param in translator.parameters():
 # 	param.requires_grad = False
 
-decider_loss_function = nn.BCELoss()
-guesser_loss_function = nn.NLLLoss()
-
-decider_optimizer = optim.Adam(decider_model.parameters(), decider_lr)
-guesser_optimizer = optim.Adam(guesser_model.parameters(), guesser_lr)
 
 if not os.path.isfile('test_game_ids'+str(n_games_to_train)+'.p'):
     _game_ids = get_game_ids_with_max_length(length)
@@ -207,7 +211,7 @@ for epoch in range(iterations):
 
 		question_number = 0
 
-		print("Data Loaded")
+		print("Game ID", gid)
 
 		tgtBatch = [] # For OpenNMT
 
@@ -219,29 +223,30 @@ for epoch in range(iterations):
 				predBatch, _, _, encStates = translator.translate(srcBatch, tgtBatch)
 				srcBatch[0] += predBatch[0][0] 
 				orcale_question = [' '.join(predBatch[0][0][1:-1])]
-				print(orcale_question)
 				encoder_hidden_state = Variable(encStates[-1].data, requires_grad = False)
 			else:
 				predBatch, _, _, encStates = translator.translate(srcBatch, tgtBatch)
 				srcBatch[0] += predBatch[0][0] 
 				orcale_question = [' '.join(predBatch[0][0][1:-1])]
-				encoder_hidden_state = Variable(encStates[-1], requires_grad = False)
+				encoder_hidden_state = Variable(encStates[-1].data, requires_grad = False)
 
 
 			decision = decider_model(encoder_hidden_state)
-			print(decision)
-			decision.data[0,0] = 0.6	
+			# print(decision)
+			# decision.data[0,0] = 0.4	
 
 			if (decision.data[0,0] < 0.5) and question_number< 10:
-				print("Another Question!")
+				# print("Another Question!")
 				out = oracle(orcale_question, spatial, object_class, crop_features.data, visual_features.data, num = 1)
-				print(out)
+				_, answer = out.topk(1)
+				if use_cuda:
+					answer = answer.cpu()
+				srcBatch[0] += [id2ans[answer.data.numpy()[0][0]]]
+				question_number += 1
 			else:
 				break
 
-		### Guess And Backpropagate if training sample
-
-		# TODO: OpenNMT encoder here to be stored in encoder_hidden_state
+		### Guess And Backpropagate
 		if use_cuda:
 			object_spatials = Variable(object_spatials).cuda()
 		else:
@@ -255,12 +260,10 @@ for epoch in range(iterations):
 
 		if use_cuda:
 			guesser_loss = guesser_loss_function(guess, Variable(torch.LongTensor([target_guess])).cuda())
-			decider_loss = decider_loss_function(decision, Variable(torch.Tensor([1 if guess_id == target_guess else 0])).cuda())
-			decider_loss = 0.9*decider_loss + 0.1*decider_loss*question_number # add regularization to decider
+			decider_loss = decider_loss_function(decision, Variable(torch.Tensor([1 if guess_id == target_guess else 0])).cuda(), question_number)
 		else:
 			guesser_loss = guesser_loss_function(guess, Variable(torch.LongTensor([target_guess])))
-			decider_loss = decider_loss_function(decision, Variable(torch.Tensor([1 if guess_id == target_guess else 0])))
-			decider_loss = 0.9*decider_loss + 0.1*decider_loss*question_number # add regularization to decider
+			decider_loss = decider_loss_function(decision, Variable(torch.Tensor([1 if guess_id == target_guess else 0])), question_number)
 
 		if train_game:
 			guesser_loss.backward()
