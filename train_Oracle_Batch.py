@@ -88,7 +88,7 @@ def train():
     d_hidden3 = (d_hidden2+d_out)/2
     d_hout = (d_hidden3+d_out)/2
 
-    batch_size = 1000
+    batch_size = 64
 
     #Instance of Oracle om LSTM en MLP te runnen?
     model = Oracle(vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hidden2, d_hidden3, d_hout, d_out, word2index, batch_size)
@@ -153,7 +153,7 @@ def train():
         iterations = 0
 
         # Loop over batches
-        for batch in np.vstack([batches]):
+        for batch in np.vstack([batches, batches_val]):
 
             # Save statistics about the images
             corresponding_gids = []
@@ -219,11 +219,10 @@ def train():
                 oracle_epoch_loss_valid = torch.cat([oracle_epoch_loss, cost.data])
             else:
                 oracle_epoch_loss = torch.cat([oracle_epoch_loss, cost.data])
-    
-            # Backpropogate Errors 
-            cost.backward()
-            optimizer.step()
-            optimizer.zero_grad() 
+                # Backpropogate Errors 
+                cost.backward()
+                optimizer.step()
+                optimizer.zero_grad() 
 
             if iterations % 1 == 0:
                 file.write("\nEpoch %d, in iteration %d" % (epoch, iterations))
@@ -237,10 +236,11 @@ def train():
             iterations += 1
 
         file.write("\nTotal:\n\tTime:" + str(time()-start) + " \n\tLoss:" + str(torch.mean(oracle_epoch_loss)) + "\n")
-        # file.write("\tValidation loss: " + str(torch.mean(oracle_epoch_loss_valid)) + "\n\n")
+        if oracle_epoch_loss_valid.dim() > 0:
+            file.write("\tValidation loss: " + str(torch.mean(oracle_epoch_loss_valid)) + "\n\n")
         file.flush()
 
-        torch.save(model.state_dict(), 'Models/bin/oracle_model_e1_epoch_' + str(epoch))
+        torch.save(model.state_dict(), 'Models/bin/oracle_model_version3_epoch_' + str(epoch))
 
 
 if __name__ == '__main__':
