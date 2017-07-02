@@ -8,6 +8,7 @@ import getpass
 import os
 import pickle
 import numpy as np
+import datetime
 from time import time
 from random import random
 
