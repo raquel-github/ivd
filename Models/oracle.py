@@ -48,12 +48,12 @@ class Oracle(nn.Module):
             nn.ReLU(), 
             nn.Linear(int(d_hin), int(d_hidden)), 
             nn.ReLU(), 
-            # nn.Linear(int(d_hidden), int(d_hout)),
-            nn.Linear(int(d_hidden), int(d_hidden2)),
-            nn.ReLU(), 
-            nn.Linear(int(d_hidden2), int(d_hidden3)),
-            nn.ReLU(), 
-            nn.Linear(int(d_hidden3), int(d_hout)),
+            nn.Linear(int(d_hidden), int(d_hout)),
+            # nn.Linear(int(d_hidden), int(d_hidden2)),
+            # nn.ReLU(), 
+            # nn.Linear(int(d_hidden2), int(d_hidden3)),
+            # nn.ReLU(), 
+            # nn.Linear(int(d_hidden3), int(d_hout)),
             nn.ReLU(),
             nn.Linear(int(d_hout), int(d_out))
         )
