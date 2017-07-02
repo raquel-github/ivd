@@ -217,7 +217,7 @@ def train():
 
             # Check if we need to include this loss in the training or validation loss
             if batch[0] in gameids_val:
-                oracle_epoch_loss_valid = torch.cat([oracle_epoch_loss, cost.data])
+                oracle_epoch_loss_valid = torch.cat([oracle_epoch_loss_valid, cost.data])
             # else:
             #     oracle_epoch_loss = torch.cat([oracle_epoch_loss, cost.data])
             #     # Backpropogate Errors 
