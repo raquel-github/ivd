@@ -101,8 +101,11 @@ def main():
             if len(srcBatch) == 0:
                 break
 
-        predBatch, predScore, goldScore = translator.translate(srcBatch,
-                                                               tgtBatch)
+        print(srcBatch)
+        print(tgtBatch)
+        predBatch, predScore, goldScore, encStates = translator.translate(srcBatch, tgtBatch)
+        print(predBatch[0][0][1:-1])
+        # print(encStates[-1][0])
         predScoreTotal += sum(score[0] for score in predScore)
         predWordsTotal += sum(len(x[0]) for x in predBatch)
         if tgtF is not None:

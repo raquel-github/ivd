@@ -256,7 +256,7 @@ class Translator(object):
                       for id in t.tolist()]
                      for t in beam[b].nextYs][1:])
 
-        return allHyp, allScores, allAttn, goldScores
+        return allHyp, allScores, allAttn, goldScores, encStates
 
     def translate(self, srcBatch, goldBatch):
         #  (1) convert words to indexes
@@ -265,7 +265,7 @@ class Translator(object):
         batchSize = self._getBatchSize(src[0])
 
         #  (2) translate
-        pred, predScore, attn, goldScore = self.translateBatch(src, tgt)
+        pred, predScore, attn, goldScore, encStates = self.translateBatch(src, tgt)
         pred, predScore, attn, goldScore = list(zip(
             *sorted(zip(pred, predScore, attn, goldScore, indices),
                     key=lambda x: x[-1])))[:-1]
@@ -278,4 +278,4 @@ class Translator(object):
                  for n in range(self.opt.n_best)]
             )
 
-        return predBatch, predScore, goldScore
+        return predBatch, predScore, goldScore, encStates
