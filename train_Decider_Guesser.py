@@ -29,6 +29,11 @@ indicies_path           = "../ivd_data/indices.json"
 images_features_path    = "../ivd_data/image_features.h5"
 crop_features_path      = "../ivd_data/image_features_crops.h5"
 
+ts                      = str(datetime.datetime.fromtimestamp(time()).strftime('%Y_%m_%d_%H_%M'))
+output_file             = "logs/deciderguesser_output" + ts + ".log"
+loss_file               = "logs/decider_guesser_loss" + ts + ".log"
+hyperparameters_file    = "logs/deciderguesser_hyperparameters" + ts + ".log"
+
 dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_features_path=images_features_path, crop_features_path= crop_features_path)
 
 ### Hyperparamters
@@ -86,6 +91,24 @@ n_games_to_train		= 20
 
 pad_token				= int(word2index['-PAD-'])
 sos_token				= int(word2index['-SOS-'])
+
+if logging:
+    with open(hyperparameters_file, 'a') as hyp:
+    	hyp.write("hidden_encoder_dim %i \n"%(hidden_encoder_dim))
+    	hyp.write('categories_length %i \n' %(categories_length+1))
+    	hyp.write('object_embedding_dim %i \n' %(object_embedding_dim))
+    	hyp.write('vocab_size %i \n' %(vocab_size))
+    	hyp.write('embedding_dim%i \n'%(embedding_dim))
+    	hyp.write('hidden_dim%i \n'%(hidden_dim))
+    	hyp.write('visual_len%i \n'%(visual_len))
+    	hyp.write('object_len%i \n'%(object_len))
+    	hyp.write('spatial_len%i \n'%(spatial_len))
+    	hyp.write('id2ans: '+str(id2ans)+'\n')
+    	hyp.write('iterations%i \n'%(iterations))
+    	hyp.write('guesser_lr%f \n'%(guesser_lr))
+    	hyp.write('decider_lr%f \n'%(decider_lr))
+    	hyp.write('train_val_ratio%f \n'%(train_val_ratio))
+    	hyp.write('n_games_to_train%i \n'%(n_games_to_train))
 
 
 # load encoder / decoder
@@ -178,7 +201,7 @@ for epoch in range(iterations):
 	no_questions_history = []
 	guesser_wincount		 = 0
 	guesser_valid_wincount 	 = 0
-	random_gids 			 = np.random.choice(len(game_ids_train+game_ids_val),4)
+	random_gids 			 = np.random.choice(len(game_ids_train+game_ids_val),10)
 
 	for gid in game_ids_train+game_ids_val:
 
@@ -272,6 +295,21 @@ for epoch in range(iterations):
 		# get best guess for decider target calc
 		_, guess_id = guess.data.topk(1)
 		guess_id 	= guess_id[0][0]
+
+		if guess_id == target_guess:
+			if train_game:
+				guesser_wincount += 1
+			else:
+				guesser_valid_wincount += 1
+
+		if logging:
+			if gid in random_gids:
+				with open(output_file, 'a') as out:
+					out.write('epoch: '+str(epoch)+', GID: '+str(gid)+'\n')
+					out.write("questions"+str(srcBatch)+'\n')
+					out.write("Image URL:"+str(dr.get_image_url(gid))+'\n')
+					out.write("Guess:"+str(guess_id == target_guess)+'\n')
+
 
 		if use_cuda:
 			guesser_loss = guesser_loss_function(guess, Variable(torch.LongTensor([target_guess])).cuda())
