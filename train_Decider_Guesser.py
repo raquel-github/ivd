@@ -88,7 +88,7 @@ guesser_lr              = 0.0001
 grad_clip               = 50.
 train_val_ratio         = 0.1
 batch_size				= 1 if my_sys else 1
-n_games_to_train		= 20
+n_games_to_train		= 96000
 
 pad_token				= int(word2index['-PAD-'])
 sos_token				= int(word2index['-SOS-'])
@@ -303,13 +303,13 @@ for epoch in range(iterations):
 			else:
 				guesser_valid_wincount += 1
 
-		if logging:
-			if gid in random_gids:
-				with open(output_file, 'a') as out:
-					out.write('epoch: '+str(epoch)+', GID: '+str(gid)+'\n')
-					out.write("questions"+str(srcBatch)+'\n')
-					out.write("Image URL:"+str(dr.get_image_url(gid))+'\n')
-					out.write("Guess:"+str(guess_id == target_guess)+'\n')
+		# if logging:
+		# 	if gid in random_gids:
+		# 		with open(output_file, 'a') as out:
+		# 			out.write('epoch: '+str(epoch)+', GID: '+str(gid)+'\n')
+		# 			out.write("questions"+str(srcBatch)+'\n')
+		# 			out.write("Image URL:"+str(dr.get_image_url(gid))+'\n')
+		# 			out.write("Guess:"+str(guess_id == target_guess)+'\n')
 
 
 		if use_cuda:
