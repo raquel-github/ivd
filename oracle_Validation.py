@@ -93,13 +93,8 @@ def train():
     #Instance of Oracle om LSTM en MLP te runnen?
     
     
-    # Are we using cuda?
-    if use_cuda:
-        model.cuda()
 
-    # Create loss and optimizer object
-    loss = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.0001)
+    # optimizer = optim.Adam(model.parameters(), lr=0.0001)
 
     if os.path.exists('gameids_oracle_train.p'):
         with open('gameids_oracle_train.p', 'rb') as f:
@@ -132,6 +127,13 @@ def train():
 
         model = Oracle(vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hidden2, d_hidden3, d_hout, d_out, word2index, batch_size)
         model.load_state_dict(torch.load('Models/bin/oracle_model_e2_epoch_' + str(epoch)))
+
+            # Are we using cuda?
+        if use_cuda:
+            model.cuda()
+
+        # Create loss and optimizer object
+        loss = nn.CrossEntropyLoss()
 
         # Save start time
         start = time()
@@ -216,12 +218,12 @@ def train():
             # Check if we need to include this loss in the training or validation loss
             if batch[0] in gameids_val:
                 oracle_epoch_loss_valid = torch.cat([oracle_epoch_loss, cost.data])
-            else:
-                oracle_epoch_loss = torch.cat([oracle_epoch_loss, cost.data])
-                # Backpropogate Errors 
-                cost.backward()
-                optimizer.step()
-                optimizer.zero_grad() 
+            # else:
+            #     oracle_epoch_loss = torch.cat([oracle_epoch_loss, cost.data])
+            #     # Backpropogate Errors 
+            #     cost.backward()
+            #     optimizer.step()
+            #     optimizer.zero_grad() 
 
             # if iterations % 1 == 0:
             #     file.write("\nEpoch %d, in iteration %d" % (epoch, iterations))
