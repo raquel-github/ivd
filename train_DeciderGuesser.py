@@ -206,6 +206,7 @@ if logging:
 for epoch in range(iterations):
 	print("Epoch: ",epoch)
 	start = time()
+	start1 = time()
 	if use_cuda:
 		guesser_epoch_loss 		= torch.cuda.FloatTensor()
 		guesser_epoch_loss_vali = torch.cuda.FloatTensor()
@@ -254,8 +255,9 @@ for epoch in range(iterations):
 
 		question_number = 0
 
-		if gid%25000==0:
-			print("Game ID", gid)
+		if gid%500==0:
+			print("Game ID: "+str(gid)+" Time taken: "+str(time()-start1))
+			start1 = time()
 
 		tgtBatch = [] # For OpenNMT
 
@@ -308,7 +310,7 @@ for epoch in range(iterations):
 				guesser_valid_wincount += 1
 
 		if logging:
-			if gid in random_gids and epoch>1 and epoch%2 ==0:
+			if gid in random_gids:
 				with open(output_file, 'a') as out:
 					out.write('epoch: '+str(epoch)+', GID: '+str(gid)+'\n')
 					out.write("questions"+str(srcBatch)+'\n')
@@ -350,7 +352,7 @@ for epoch in range(iterations):
 	    with open(loss_file, 'a') as out:
 	        out.write("%f, %f,%f, %f,%f, %f,%f \n" %(torch.mean(guesser_epoch_loss), torch.mean(guesser_epoch_loss_vali), torch.mean(decider_epoch_loss), torch.mean(decider_epoch_loss_vali),np.mean(no_questions_history), guesser_wincount/len(game_ids_train), guesser_valid_wincount/len(game_ids_val)))
 
-	if save_models and (epoch%2==0 or min_guesser_valid>torch.mean(guesser_epoch_loss_vali)):
+	if save_models:
 	    torch.save(decider_model.state_dict(), decider_model_path + str(epoch))
 	    torch.save(guesser_model.state_dict(), guesser_model_path + str(epoch))
 
