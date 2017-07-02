@@ -19,8 +19,8 @@ class Oracle(nn.Module):
     # d_hin/d_hidden/d_hout: dimenties van hidden layer: 
     # --- helft van de dimensies die het verbind, recursively, voor gradual overgang.
     # d_out: 3 (Yes,No,N/A)
-    def __init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size=1):
-        # Dit weet ik allemaal niet zo goed meer: is dit nodig?
+    def __init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hidden2, d_hidden3, d_hout, d_out, word2index, batch_size=1):
+    # def __init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size=1):
         super(Oracle, self).__init__()
         self.hidden_dim = hidden_dim
         self.vocab_size = vocab_size
@@ -37,19 +37,23 @@ class Oracle(nn.Module):
             self.object_embedding_model = nn.Embedding(categories_length, object_embedding_dim)
             self.word_embeddings = nn.Embedding(vocab_size, embedding_dim)
 
-
         # LSTM model that encodes Question
         self.lstm = nn.LSTM(embedding_dim, hidden_dim) 
 
         self.hidden = self.init_hidden()
 
-        # MLP model that classifies to an Answer
+         # MLP model that classifies to an Answer
         self.mlp = nn.Sequential(
             nn.Linear(int(d_in), int(d_hin)),
             nn.ReLU(), 
             nn.Linear(int(d_hin), int(d_hidden)), 
             nn.ReLU(), 
             nn.Linear(int(d_hidden), int(d_hout)),
+            # nn.Linear(int(d_hidden), int(d_hidden2)),
+            # nn.ReLU(), 
+            # nn.Linear(int(d_hidden2), int(d_hidden3)),
+            # nn.ReLU(), 
+            # nn.Linear(int(d_hidden3), int(d_hout)),
             nn.ReLU(),
             nn.Linear(int(d_hout), int(d_out))
         )
@@ -57,7 +61,6 @@ class Oracle(nn.Module):
         if use_cuda:
             self.lstm.cuda()
             self.mlp.cuda()
-
 
     def word2embedd(self, w):
         if use_cuda:
@@ -121,8 +124,10 @@ class Oracle(nn.Module):
         return mlp_out 
 
 class OracleBatch(Oracle):
-    def __init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size):
-        Oracle.__init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size)
+    # def __init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size):
+    #     Oracle.__init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size)
+    def __init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hidden_2, d_hidden3, d_hout, d_out, word2index, batch_size):
+        Oracle.__init__(self, vocab_size, embedding_dim, categories_length, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hidden_2, d_hidden3, d_hout, d_out, word2index, batch_size)
 
     def forward(self, question, spatial, object_class, crop, image, num):
 
@@ -131,14 +136,14 @@ class OracleBatch(Oracle):
             out = Variable(torch.Tensor(num, 3)).cuda()
         else:
             out = Variable(torch.Tensor(num, 3))
-        
+
         if use_cuda:
             spatial = Variable(spatial, requires_grad = False).cuda()
         else:
             spatial = Variable(spatial, requires_grad = False)
 
         spatial = [spatial]
-
+        
         # Loop over all QA pairs
         for i in range(num):
 
@@ -152,7 +157,7 @@ class OracleBatch(Oracle):
 
             # print(sentence_embedding)
             encoder_in = sentence_embedding.view(len(question[i].split()), 1, -1)
-             
+            
             # LSTM pass
             _ , hidden  = self.lstm(encoder_in, self.hidden)
 
@@ -173,18 +178,13 @@ class OracleBatch(Oracle):
             hidden_lstm = hidden[0].view(1,-1)
 
             #Get answer
-            # print('image_emb',image_emb.size())
-            # print('crop_emb',crop_emb.size())
-            # print('spatial_emb.data',spatial_emb.data.size())
-            # print('object_class_emb.data',object_class_emb.data.size())
-            # print('hidden_lstm.data',hidden_lstm.data.size())
+
             if use_cuda:
                 mlp_in = Variable(torch.cat([image_emb, crop_emb, spatial_emb.data, object_class_emb.data, hidden_lstm.data],dim=1)).cuda()
             else:
                 mlp_in = Variable(torch.cat([image_emb, crop_emb, spatial_emb.data, object_class_emb.data, hidden_lstm.data],dim=1))
 
             # MLP pass
-            # print(mlp_in.size())
             out[i] = self.mlp(mlp_in)
 
         # Return the results

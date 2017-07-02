@@ -1,3 +1,5 @@
+ivdModels/bin/*
+logs/*
 pred.txt
 multi-bleu.perl
 *.pt

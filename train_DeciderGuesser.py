@@ -12,6 +12,7 @@ import codecs
 import os
 import getpass
 import pickle
+import datetime
 import numpy as np
 from time import time
 from random import random
@@ -33,13 +34,19 @@ indicies_path           = "../ivd_data/indices.json"
 images_features_path    = "../ivd_data/image_features.h5"
 crop_features_path      = "../ivd_data/image_features_crops.h5" 
 
+ts                      = str(datetime.datetime.fromtimestamp(time()).strftime('%Y_%m_%d_%H_%M'))
+output_file             = "logs/deciderguesser_output" + ts + ".log"
+loss_file               = "logs/decider_guesser_loss" + ts + ".log"
+hyperparameters_file    = "logs/deciderguesser_hyperparameters" + ts + ".log"
+
+
 dr = DataReader(data_path=data_path, indicies_path=indicies_path, images_features_path=images_features_path, crop_features_path = crop_features_path)
 
 ### Hyperparamters
-my_sys                  = getpass.getuser() != 'nabi'
+my_sys                  = getpass.getuser() == 'nabi'
 length					= 11
-logging                 = False if my_sys else True
-save_models             = False if my_sys else True
+logging                 = True if my_sys else False
+save_models             = True if my_sys else False
 
 # OpenNMT Parameters
 opt = argparse.Namespace()
@@ -59,6 +66,9 @@ hidden_encoder_dim		= 500
 categories_length 		= dr.get_categories_length()
 cat2id 					= dr.get_cat2id()
 object_embedding_dim 	= 20
+guesser_model_path		= 'ivdModels/bin/guessermodel'+ts+'_e'
+decider_model_path		= 'ivdModels/bin/decidermodel'+ts+'_e'
+min_guesser_valid		= math.inf
 
 
 # Oracle
@@ -66,15 +76,17 @@ word2index              = dr.get_word2ind()
 vocab_size              = len(word2index)
 embedding_dim 		    = 512
 hidden_dim 				= 512
-oracle_model_path		= '../OpenNMT_Models/oracle_model_epoch_10'
+oracle_model_path		= '../OpenNMT_Models/oracle_optimal'
 visual_len				= 4096
 object_len 				= 4096 
 spatial_len 			= 8
 d_out 					= 3
 d_in 					= visual_len + spatial_len + object_embedding_dim + hidden_dim + object_len
-d_hin 					= (d_in+d_out)/4 
+d_hin 					= (d_in+d_out)/2 
 d_hidden 				= (d_hin+d_out)/2
-d_hout 					= (d_hidden+d_out)/2
+d_hidden2 				= (d_hidden+d_out)/2
+d_hidden3 				= (d_hidden2+d_out)/2
+d_hout 					= (d_hidden3+d_out)/2
 ans2id 					= {"Yes": 0,"No": 1,"N/A": 2}
 id2ans					= {0: "yes", 1: "no", 2:"n/a"}
 
@@ -82,10 +94,29 @@ id2ans					= {0: "yes", 1: "no", 2:"n/a"}
 iterations              = 100
 decider_lr              = 0.0001
 guesser_lr              = 0.0001
-grad_clip               = 50.
+grad_clip               = 5.
 train_val_ratio         = 0.1
 batch_size				= 1 if my_sys else 1
-n_games_to_train		= 20
+n_games_to_train		= 96000 if my_sys else 20
+
+
+if logging:
+    with open(hyperparameters_file, 'a') as hyp:
+    	hyp.write("hidden_encoder_dim %i \n"%(hidden_encoder_dim))
+    	hyp.write('categories_length %i \n' %(categories_length+1))
+    	hyp.write('object_embedding_dim %i \n' %(object_embedding_dim))
+    	hyp.write('vocab_size %i \n' %(vocab_size))
+    	hyp.write('embedding_dim%i \n'%(embedding_dim))
+    	hyp.write('hidden_dim%i \n'%(hidden_dim))
+    	hyp.write('visual_len%i \n'%(visual_len))
+    	hyp.write('object_len%i \n'%(object_len))
+    	hyp.write('spatial_len%i \n'%(spatial_len))
+    	hyp.write('id2ans: '+str(id2ans)+'\n')
+    	hyp.write('iterations%i \n'%(iterations))
+    	hyp.write('guesser_lr%f \n'%(guesser_lr))
+    	hyp.write('decider_lr%f \n'%(decider_lr))
+    	hyp.write('train_val_ratio%f \n'%(train_val_ratio))
+    	hyp.write('n_games_to_train%i \n'%(n_games_to_train))
 
 
 # prune games
@@ -109,7 +140,8 @@ def get_game_ids_with_max_length(length):
 
 decider_model = Decider(hidden_encoder_dim)
 guesser_model = Guesser(hidden_encoder_dim, categories_length+1, cat2id, object_embedding_dim)
-oracle 		  = Oracle(vocab_size, embedding_dim, categories_length+1, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size=1)
+# oracle 		  = Oracle(vocab_size, embedding_dim, categories_length+1, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hout, d_out, word2index, batch_size=1)
+oracle 		  = Oracle(vocab_size, embedding_dim, categories_length+1, object_embedding_dim, hidden_dim, d_in, d_hin, d_hidden, d_hidden2, d_hidden3, d_hout, d_out, word2index, batch_size=1)
 
 decider_loss_function = BCELossReg(ratio=0.9)
 guesser_loss_function = nn.NLLLoss()
@@ -163,6 +195,13 @@ print("Valid game ids done. Number of valid games: ", len(game_ids))
 game_ids_val = list(np.random.choice(game_ids, int(train_val_ratio*len(game_ids))))
 game_ids_train = [gid for gid in game_ids if gid not in game_ids_val]
 
+final_no_questions_history = []
+avg_no_questions_history   = []
+
+if logging:
+        with open(loss_file, 'a') as out:
+        	out.write("Guesser epoch loss, Guesser epoch valid loss, Decider epoch loss, Decider valid loss, Average number of questions, Guesser Training Accuracy, Guesser Validation Accuracy ")
+
 
 for epoch in range(iterations):
 	print("Epoch: ",epoch)
@@ -178,6 +217,10 @@ for epoch in range(iterations):
 		decider_epoch_loss 		= torch.FloatTensor()
 		decider_epoch_loss_vali = torch.FloatTensor()
 
+	no_questions_history = []
+	guesser_wincount		 = 0
+	guesser_valid_wincount 	 = 0
+	random_gids 			 = np.random.choice(len(game_ids_train+game_ids_val),4)
 
 	for gid in game_ids_train+game_ids_val:
 
@@ -211,7 +254,8 @@ for epoch in range(iterations):
 
 		question_number = 0
 
-		print("Game ID", gid)
+		if gid%25000==0:
+			print("Game ID", gid)
 
 		tgtBatch = [] # For OpenNMT
 
@@ -232,8 +276,6 @@ for epoch in range(iterations):
 
 
 			decision = decider_model(encoder_hidden_state)
-			# print(decision)
-			# decision.data[0,0] = 0.4	
 
 			if (decision.data[0,0] < 0.5) and question_number< 10:
 				# print("Another Question!")
@@ -244,6 +286,7 @@ for epoch in range(iterations):
 				srcBatch[0] += [id2ans[answer.data.numpy()[0][0]]]
 				question_number += 1
 			else:
+				no_questions_history.append(question_number)
 				break
 
 		### Guess And Backpropagate
@@ -258,6 +301,21 @@ for epoch in range(iterations):
 		_, guess_id = guess.data.topk(1)
 		guess_id 	= guess_id[0][0]
 
+		if guess_id == target_guess:
+			if train_game:
+				guesser_wincount += 1
+			else:
+				guesser_valid_wincount += 1
+
+		if logging:
+			if gid in random_gids and epoch>1 and epoch%2 ==0:
+				with open(output_file, 'a') as out:
+					out.write('epoch: '+str(epoch)+', GID: '+str(gid)+'\n')
+					out.write("questions"+str(srcBatch)+'\n')
+					out.write("Image URL:"+str(dr.get_image_url(gid))+'\n')
+					out.write("Guess:"+str(guess_id == target_guess)+'\n')
+
+
 		if use_cuda:
 			guesser_loss = guesser_loss_function(guess, Variable(torch.LongTensor([target_guess])).cuda())
 			decider_loss = decider_loss_function(decision, Variable(torch.Tensor([1 if guess_id == target_guess else 0])).cuda(), question_number)
@@ -269,6 +327,9 @@ for epoch in range(iterations):
 			guesser_loss.backward()
 			decider_loss.backward()
 
+			# nn.utils.clip_grad_norm(decider_model.parameters(), max_norm=grad_clip)
+			# nn.utils.clip_grad_norm(guesser_model.parameters(), max_norm=grad_clip)
+
 			guesser_optimizer.step()
 			decider_optimizer.step()
 
@@ -278,10 +339,32 @@ for epoch in range(iterations):
 			guesser_epoch_loss_vali = torch.cat([guesser_epoch_loss_vali, guesser_loss.data])
 			decider_epoch_loss_vali = torch.cat([decider_epoch_loss_vali, decider_loss.data])
 
-
+	final_no_questions_history = no_questions_history
+	avg_no_questions_history.append(np.mean(no_questions_history))
 	print("Epoch %03d, Time %.2f, Guesser Train Loss: %.4f, Guesser Vali Loss %.4f, Decider Train Loss %.4f, Decider Vali Loss %.4f" \
 		%(epoch, time()-start,torch.mean(guesser_epoch_loss), torch.mean(guesser_epoch_loss_vali), torch.mean(decider_epoch_loss), torch.mean(decider_epoch_loss_vali)))
+	print("Average number of questions %.2f, Guesser Training Accuracy %f, Guesser Validation Accuracy %f"%(np.mean(no_questions_history), guesser_wincount/len(game_ids_train), guesser_valid_wincount/len(game_ids_val)) )
 
+	 # write loss
+	if logging:
+	    with open(loss_file, 'a') as out:
+	        out.write("%f, %f,%f, %f,%f, %f,%f \n" %(torch.mean(guesser_epoch_loss), torch.mean(guesser_epoch_loss_vali), torch.mean(decider_epoch_loss), torch.mean(decider_epoch_loss_vali),np.mean(no_questions_history), guesser_wincount/len(game_ids_train), guesser_valid_wincount/len(game_ids_val)))
+
+	if save_models and (epoch%2==0 or min_guesser_valid>torch.mean(guesser_epoch_loss_vali)):
+	    torch.save(decider_model.state_dict(), decider_model_path + str(epoch))
+	    torch.save(guesser_model.state_dict(), guesser_model_path + str(epoch))
+
+	    if min_guesser_valid>torch.mean(guesser_epoch_loss_vali):
+	    	min_guesser_valid = torch.mean(guesser_epoch_loss_vali)
+
+	    print('Models saved for epoch:', epoch)
+
+if logging:
+	with open(loss_file, 'a') as out:
+		out.write("final_no_questions_history"+ str(final_no_questions_history)+'\n')
+		out.write("avg_no_questions_history"+ str(avg_no_questions_history)+'\n')
+print("Training completed.")
+	
 
 
 
