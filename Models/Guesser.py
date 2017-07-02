@@ -53,10 +53,8 @@ class Guesser(nn.Module):
         image_center_x  = width / 2
         image_center_y  = height / 2
 
-        if use_cuda:
-            spatial = Variable(torch.FloatTensor(len(bboxes), 8)).cuda()
-        else:
-            spatial = Variable(torch.FloatTensor(len(bboxes), 8))
+        
+        spatial = torch.FloatTensor(len(bboxes), 8)
 
         for i, bbox in enumerate(bboxes):
             x_min = bbox[0] / width
@@ -84,7 +82,7 @@ class Guesser(nn.Module):
         return spatial
 
 
-    def forward(self, hidden_encoder, img_meta, object_categories):
+    def forward(self, hidden_encoder, spatial, object_categories):
 
         # get the object embeddings of the objects in the image
         if use_cuda:
@@ -93,7 +91,7 @@ class Guesser(nn.Module):
             obj_embeddings = self.object_embeddings(Variable(object_categories))
 
         # get the spatial info
-        spatial = self.img_spatial(img_meta)
+        # spatial = self.img_spatial(img_meta)
 
         mlp_in = torch.cat([spatial, obj_embeddings], dim=1)
 

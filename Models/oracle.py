@@ -58,6 +58,10 @@ class Oracle(nn.Module):
             nn.Linear(int(d_hout), int(d_out))
         )
 
+        if use_cuda:
+            self.lstm.cuda()
+            self.mlp.cuda()
+
     def word2embedd(self, w):
         if use_cuda:
             return self.word_embeddings(Variable(torch.LongTensor([self.word2index[w]])).cuda())
@@ -132,6 +136,13 @@ class OracleBatch(Oracle):
             out = Variable(torch.Tensor(num, 3)).cuda()
         else:
             out = Variable(torch.Tensor(num, 3))
+
+        if use_cuda:
+            spatial = Variable(spatial, requires_grad = False).cuda()
+        else:
+            spatial = Variable(spatial, requires_grad = False)
+
+        spatial = [spatial]
         
         # Loop over all QA pairs
         for i in range(num):
