@@ -155,7 +155,8 @@ class OracleBatch(Oracle):
             for j, w in enumerate(question[i].split()):
                 sentence_embedding[j] = self.word2embedd(w)
 
-            # print(sentence_embedding)
+            print(sentence_embedding)
+            print(sentence_embedding.size())
             encoder_in = sentence_embedding.view(len(question[i].split()), 1, -1)
             
             # LSTM pass
