@@ -97,7 +97,7 @@ guesser_lr              = 0.0001
 grad_clip               = 5.
 train_val_ratio         = 0.1
 batch_size				= 1 if my_sys else 1
-n_games_to_train		= 20 if my_sys else 20
+n_games_to_train		= 96000 if my_sys else 20
 
 
 if logging:
