@@ -64,3 +64,12 @@ test_game_ids_200.p
 test_game_ids_541.p
 
 test_game_ids_splitting.p
+
+OpenNMT-py/ivdModels/bin/*
+OpenNMT-py/logs/*
+OpenNMT-py/pred.txt
+OpenNMT-py/multi-bleu.perl
+OpenNMT-py/*.pt
+OpenNMT-py/*.pyc
+OpenNMT-py/#.*
+OpenNMT-py/.idea

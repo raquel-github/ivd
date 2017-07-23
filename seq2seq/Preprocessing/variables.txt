@@ -1,0 +1,24 @@
+Variables in the HDF5 file (all integers, bbox contains floats):
+answers_training[i][j]                  Contains the answer to question J in game I (only one word, index)
+game_index_training[i]                  Contains the ID of the game at index I   
+image_wh_training[i]                    Contains the width (index 0) and height (index 1) of the image in game I
+image_index_training[i]                 Contains the actual ID of the image in game I
+object_index_training[i][j]             Contains the actual ID of object J in game I                   
+objects_bbox_training[i][j]             Contains the bounding box coordinates (at index 0 - 3) of object J in game I
+objects_training[i][j]                  Contains the category ID of object J in game I
+question_length_training[i][j]          Contains the length of question J in game I
+questions_training[i][j][k]             Contains the Kth word of question J in game I
+success_training[i]                     Indicates if game I was completed succesfully (0 - fail or 1 - success)
+correct_object_training[i]              The ID of the correct object in game I
+
+Variables in de JSON (contains strings):
+word2ind - mapping of words in the vocabulary to the index used by the questions
+ind2word - reverse mapping of word2ind
+categories - mapping of category IDs to 
+img_metadata - mapping of *actual* image ID to coco_url and filename
+game_id_to_img - mapping of game ID to image ID
+
+
+Variables in the image_features.h5 HDF5 file:
+all_img_ids[i]                          Contains the image id at the index I
+all_img_features[i]		        Contains the VGG16 features of the image (dim: 4096)
