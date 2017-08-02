@@ -1,19 +1,5 @@
 .ipynb_checkpoints/Untitled-checkpoint.ipynb
 
-glove.6B.100d
-
-glove.6B.100d.pt
-
-glove.6B.100d.txt
-
-glove.6B.100d.txt
-
-glove.6B.200d.txt
-
-glove.6B.300d.txt
-
-glove.6B.50d.txt
-
 .ipynb_checkpoints/QuestionGenerator-checkpoint.ipynb
 
 .ipynb_checkpoints/Guesser-checkpoint.ipynb
@@ -44,17 +30,14 @@ train2014/*
 
 image_features.h5
 
-Preprocessing/Data/indices.json
+seq2seq/Preprocessing/Data/indices.json
 
-Preprocessing/Data/preprocessed.h5
+seq2seq/Preprocessing/Data/preprocessed.h5
 
-Preprocessing/Data/indices.json
 
-Preprocessing/Data/preprocessed.h5
+seq2seq/logs/*
 
-logs/*
-
-Models/bin/*
+seq2seq/Models/bin/*
 
 q_lengths.p
 
@@ -64,9 +47,9 @@ test_game_ids_541.p
 
 test_game_ids_splitting.p
 
-ivdModels/bin/*
-logs/*
-pred.txt
+OpenNMT/ivdModels/bin/*
+OpenNMT/logs/*
+OpenNMT/pred.txt
 multi-bleu.perl
 *.pt
 *.pyc
