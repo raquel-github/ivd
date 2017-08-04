@@ -13,7 +13,7 @@ use_cuda = torch.cuda.is_available()
 
 class VGG_Feature_Extract():
 
-    def __init__(self, images_path):
+    def __init__(self, images_path=None):
 
         self.images_path = images_path
 
@@ -95,8 +95,8 @@ class VGG_Feature_Extract():
             rgb = Image.new('RGB',img.size)
             rgb.paste(img)
             img = rgb
-            print(img_p)
-            print(numpy.array(img).shape)
+            # print(img_p)
+            # print(numpy.array(img).shape)
         img_tensor = self.preprocess(img)
         img_tensor.unsqueeze_(0)
         if use_cuda:

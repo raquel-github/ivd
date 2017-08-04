@@ -43,5 +43,5 @@ for i, gid in enumerate(game_ids):
 file = h5py.File('image_features.h5', 'w')
 file.create_dataset('all_img_features', dtype='float32', data=all_img_features)
 file.create_dataset('all_img_ids', dtype='uint32', data=all_img_ids)
-
+file.close()
 print("Time taken: ", time()-start)
