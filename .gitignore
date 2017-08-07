@@ -34,6 +34,9 @@ seq2seq/Preprocessing/Data/indices.json
 
 seq2seq/Preprocessing/Data/preprocessed.h5
 
+OpenNMT/ivdModels/Oracle/models/*
+OpenNMT/ivdModels/Oracle/logs/*
+OpenNMT/ivdModels/Oracle/models/__pycache__/*
 
 seq2seq/logs/*
 
