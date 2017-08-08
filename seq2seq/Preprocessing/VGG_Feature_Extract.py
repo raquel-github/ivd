@@ -13,32 +13,7 @@ use_cuda = torch.cuda.is_available()
 
 class VGG_Feature_Extract():
 
-    def __init__(self, images_path=None):
-
-        self.images_path = images_path
-
-        # compute the mean and std. of all pixels for image normalization
-        # mean, std = self.get_mean_std()
-
-        # Using the imagenet mean and std
-        mean =  [0.485, 0.456, 0.406]
-        std  =  [0.229, 0.224, 0.225]
-
-        # normaliztion pipeline: (img-mean) / std
-        self.normalize = transforms.Normalize(
-           mean=mean,
-           std=std
-        )
-
-
-        # preprocessing pipeline
-        self.preprocess = transforms.Compose([
-           transforms.Scale(224),
-           transforms.CenterCrop(224),
-           transforms.ToTensor(),
-           self.normalize
-        ])
-
+    def __init__(self):
         # load preptrained model
         self.model = vgg.vgg16_bn(pretrained=True)
 
@@ -54,38 +29,6 @@ class VGG_Feature_Extract():
         if use_cuda:
             self.model.cuda();
 
-    def get_mean_std(self):
-        # get the mean channel value and std of all images
-        r_mean, g_mean, b_mean = list(), list(), list()
-        r_std, g_std, b_std = list(), list(), list()
-
-        for f in os.listdir(self.images_path+"/"):
-            if f.endswith(".jpg"):
-                img_p = self.images_path + "/" + f
-                channels = numpy.array(Image.open(img_p), dtype=numpy.float) / 255
-                # we use imageio as it turns out to be faster
-                # channels = imageio.imread(img_p) / 255
-
-                if len(channels.shape) == 2:
-                    # bw image, convert to RGB
-                    x = numpy.zeros((channels.shape[0], channels.shape[1], 3))
-                    x[:,:,0] = channels
-                    x[:,:,1] = channels
-                    x[:,:,2] = channels
-                    channels = x
-
-
-                # get mean channel value
-                r_mean.append(numpy.mean(channels[:,:,0]))
-                g_mean.append(numpy.mean(channels[:,:,1]))
-                b_mean.append(numpy.mean(channels[:,:,2]))
-                # get std channel value
-                r_std.append(numpy.std(channels[:,:,0]))
-                g_std.append(numpy.std(channels[:,:,1]))
-                b_std.append(numpy.std(channels[:,:,2]))
-
-        return [numpy.mean(r_mean), numpy.mean(g_mean), numpy.mean(b_mean)], \
-               [numpy.mean(r_std), numpy.mean(g_std), numpy.mean(b_std)]
 
 
     def get_features(self, img_p):

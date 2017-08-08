@@ -38,23 +38,23 @@ test_crops  = '/home/aashish/Documents/ProjectAI/data/GuessWhat/Test_Crops/'
 
 vgg_ext = VGG_Feature_Extract()
 
-# train_img_features, train2id = extract_img_features(train_img, os.listdir(train_img), vgg_ext, use_cuda) 
-# val_img_features, val2id = extract_img_features(val_img, os.listdir(val_img), vgg_ext, use_cuda)
-# test_img_features, test2id = extract_img_features(test_img, os.listdir(test_img), vgg_ext, use_cuda)
+train_img_features, train2id = extract_img_features(train_img, os.listdir(train_img), vgg_ext, use_cuda) 
+val_img_features, val2id = extract_img_features(val_img, os.listdir(val_img), vgg_ext, use_cuda)
+test_img_features, test2id = extract_img_features(test_img, os.listdir(test_img), vgg_ext, use_cuda)
 
-# img_file = h5py.File('image_features.h5', 'w')
-# img_file.create_dataset('train_img_features', dtype='float32', data=train_img_features)
-# img_file.create_dataset('val_img_features', dtype='float32', data=val_img_features)
-# img_file.create_dataset('test_img_features', dtype='float32', data=test_img_features)
-# img_file.close()
+img_file = h5py.File('image_features.h5', 'w')
+img_file.create_dataset('train_img_features', dtype='float32', data=train_img_features)
+img_file.create_dataset('val_img_features', dtype='float32', data=val_img_features)
+img_file.create_dataset('test_img_features', dtype='float32', data=test_img_features)
+img_file.close()
 
-# json_data = {'train2id':train2id, 'val2id':val2id, 'test2id':test2id}
-# with open('img_features2id.json', 'a') as file:
-# 	json.dump(json_data, file)
+json_data = {'train2id':train2id, 'val2id':val2id, 'test2id':test2id}
+with open('img_features2id.json', 'a') as file:
+	json.dump(json_data, file)
 
-# print('Image Features extracted. Doing the crops now')
-# print('Time taken: ', time()-start)
-# del train_img_features, val_img_features, test_img_features, train2id, val2id, test2id
+print('Image Features extracted. Doing the crops now')
+print('Time taken: ', time()-start)
+del train_img_features, val_img_features, test_img_features, train2id, val2id, test2id
 
 start = time()
 print('Begin with crops')
