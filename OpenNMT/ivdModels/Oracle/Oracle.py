@@ -29,15 +29,10 @@ class Oracle(nn.Module):
         # Initiliaze the hidden state of the LSTM
         # self.hidden_lstm = self.init_hidden(self.batch_size)
 
-        self.mlp = nn.Sequential(
-                    nn.Linear(self.hidden_lstm_dim+self.obj_cat_embedding_dim+8, 256),
-                    nn.ReLU(),
-                    nn.Linear(256,256),
-                    nn.ReLU(),
-                    nn.Linear(256,256),
-                    nn.ReLU(),
-                    nn.Dropout(),
-                    nn.Linear(256,3))
+        self.mlp1 = nn.Linear((4096*2)+self.hidden_lstm_dim+self.obj_cat_embedding_dim+8, 256)
+        self.mlp2 = nn.Linear(256,256)
+        self.mlp3 = nn.Linear(256,256)
+        self.mlp3 = nn.Linear(256,3)
 
     def init_hidden(self, actual_batch_size, split = 'train'):
         if split == 'train':
@@ -76,10 +71,13 @@ class Oracle(nn.Module):
 
         self.hidden_lstm = self.init_hidden(actual_batch_size, split)
 
+        # print(question_batch_embedding.size())
         _, self.hidden_lstm = self.lstm(question_batch_embedding.view(46, actual_batch_size, self.word_embedding_dim), self.hidden_lstm) # 46 == Max length of the question. 
 
         mlp_in = torch.cat([ image_features, crop_features, spatial_batch, obj_cat_batch_embeddding, self.hidden_lstm[0].squeeze()], 1)
 
-        mlp_out = self.mlp(mlp_in)
+        mlp_out = F.relu(self.mlp1(mlp_in))
+        mlp_out = F.relu(self.mlp2(mlp_out))
+        mlp_out = F.relu(self.mlp3(mlp_out))
 
         return F.log_softmax(mlp_out)

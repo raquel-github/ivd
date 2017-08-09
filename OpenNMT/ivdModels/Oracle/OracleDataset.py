@@ -34,7 +34,7 @@ class OracleDataset(Dataset):
             self.word2ind = json.load(file)['word2ind']
             
     def __len__(self):
-        return len(self.questions[:100])
+        return len(self.questions)
     
     def __getitem__(self, idx):
         crop_features = self.crop_features[self.crop2id[self.questions[idx]['crop_features']]]
@@ -43,7 +43,7 @@ class OracleDataset(Dataset):
         obj_cat = self.questions[idx]['obj_cat']
         
         raw_question = self.questions[idx]['question']
-        question = (np.ones(15,'uint8')*self.word2ind['-PAD-']).tolist()
+        question = (np.ones(46,'uint8')*self.word2ind['-PAD-']).tolist()
         question_words = re.findall(r'\w+', raw_question.lower())+['?']
         for wid, word in enumerate(question_words):
             if word in self.word2ind:
