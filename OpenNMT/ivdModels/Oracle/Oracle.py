@@ -56,8 +56,8 @@ class Oracle(nn.Module):
             question_batch = Variable(question_batch).cuda()
             obj_cat_batch = Variable(obj_cat_batch).cuda()
             spatial_batch = Variable(spatial_batch).cuda()
-            crop_features = Variable(crop_features).cuda()#, requires_grad=False).cuda()
-            image_features = Variable(image_features).cuda()#, requires_grad=False).cuda()
+            crop_features = Variable(crop_features, requires_grad=False).cuda()
+            image_features = Variable(image_features, requires_grad=False).cuda()
         else:
             question_batch = Variable(question_batch)
             obj_cat_batch = Variable(obj_cat_batch)
