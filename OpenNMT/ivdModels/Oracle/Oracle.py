@@ -27,12 +27,12 @@ class Oracle(nn.Module):
         self.lstm = nn.LSTM(self.word_embedding_dim, self.hidden_lstm_dim)
 
         # Initiliaze the hidden state of the LSTM
-        # self.hidden_lstm = self.init_hidden(self.batch_size)
+        # self.hidden_lstm = self.init_hidden(64)
 
         self.mlp1 = nn.Linear((4096*2)+self.hidden_lstm_dim+self.obj_cat_embedding_dim+8, 256)
         self.mlp2 = nn.Linear(256,256)
-        self.mlp3 = nn.Linear(256,256)
         self.mlp3 = nn.Linear(256,3)
+        # self.mlp4 = nn.Linear(500,3)
 
     def init_hidden(self, actual_batch_size, split = 'train'):
         if split == 'train':
@@ -56,8 +56,8 @@ class Oracle(nn.Module):
             question_batch = Variable(question_batch).cuda()
             obj_cat_batch = Variable(obj_cat_batch).cuda()
             spatial_batch = Variable(spatial_batch).cuda()
-            crop_features = Variable(crop_features, requires_grad=False).cuda()
-            image_features = Variable(image_features, requires_grad=False).cuda()
+            crop_features = Variable(crop_features).cuda()#, requires_grad=False).cuda()
+            image_features = Variable(image_features).cuda()#, requires_grad=False).cuda()
         else:
             question_batch = Variable(question_batch)
             obj_cat_batch = Variable(obj_cat_batch)
@@ -79,5 +79,6 @@ class Oracle(nn.Module):
         mlp_out = F.relu(self.mlp1(mlp_in))
         mlp_out = F.relu(self.mlp2(mlp_out))
         mlp_out = F.relu(self.mlp3(mlp_out))
+        # mlp_out = F.relu(self.mlp4(mlp_out))
 
         return F.log_softmax(mlp_out)

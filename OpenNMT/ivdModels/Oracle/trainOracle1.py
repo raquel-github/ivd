@@ -42,7 +42,7 @@ save_models             = False #if my_sys else True
 model_save_path            = "models/oracle_"+ts+'_'
 
 ## Hyperparamters
-lr                        = 0.00001
+lr                        = 0.0001
 word_embedding_dim      = 128
 hidden_lstm_dim            = 128
 with open(vocab_json_file) as file:
@@ -51,7 +51,7 @@ with open(vocab_json_file) as file:
     del vs
 iterations                = 100
 batch_size                = 64
-obj_cat_embedding_dim   = 512
+obj_cat_embedding_dim   = 128
 obj_cat_size            = 91
 
 # save hyperparameters in a file
@@ -72,8 +72,8 @@ if use_cuda:
     print(oracle_model)
 
 oracle_loss_function = nn.NLLLoss()
-oracle_optimizer = optim.Adam(oracle_model.parameters(), lr)
-# oracle_optimizer = optim.SGD(oracle_model.parameters(), lr=lr,  momentum=0.5)
+# oracle_optimizer = optim.Adam(oracle_model.parameters(), lr)
+oracle_optimizer = optim.SGD(oracle_model.parameters(), lr=lr,  momentum=0.5)
 
 split_list = ['train', 'val']
 json_files = [train_file, val_file]
@@ -97,7 +97,7 @@ for epoch in range(iterations):
 
         oracle_data = OracleDataset(split, json_data_file, img_features_file, img2id_file, crop_features_file, crop2id_file, vocab_json_file)
 
-        dataloader = DataLoader(oracle_data, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+        dataloader = DataLoader(oracle_data, batch_size=batch_size, shuffle=False, num_workers=2, pin_memory=True)
 
         for i_batch, sample in enumerate(dataloader):
             question_batch, answer_batch, crop_features, image_features, spatial_batch, obj_cat_batch = \
@@ -128,15 +128,11 @@ for epoch in range(iterations):
             else:
                 oracle_val_loss = torch.cat([oracle_val_loss, oracle_loss.data])
 
-            if i_batch % 100 == 0:
-                print('Train Epoch: {} [{}/{} ({:.0f}%)] Accuracy: {:.03f}% '.format(epoch, i_batch * batch_size, len(oracle_data) , 100. * i_batch * batch_size/ len(oracle_data), accuracy[-1]))
-
 
         if split == 'train':
             train_accuracy = np.mean(accuracy)
         elif split == 'val':
             val_accuracy = np.mean(accuracy)
-
 
 
     if save_models:
