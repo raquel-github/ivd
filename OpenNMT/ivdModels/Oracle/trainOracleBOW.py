@@ -1,5 +1,5 @@
 from OracleDataset import OracleDataset
-from Oracle import Oracle
+from OracleBOW import Oracle
 
 import numpy as np
 from time import time
