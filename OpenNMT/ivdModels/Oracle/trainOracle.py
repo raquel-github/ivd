@@ -1,5 +1,5 @@
 from OracleDataset import OracleDataset
-from Oracle import Oracle
+from OracleBOW import Oracle
 
 import numpy as np
 from time import time
@@ -43,14 +43,14 @@ model_save_path            = "models/oracle_"+ts+'_'
 
 ## Hyperparamters
 lr                        = 0.00001
-word_embedding_dim      = 128
+word_embedding_dim      = 300
 hidden_lstm_dim            = 128
 with open(vocab_json_file) as file:
     vs = json.load(file)['word2ind']
     vocab_size = len(vs)
     del vs
 iterations                = 100
-batch_size                = 64
+batch_size                = 128
 obj_cat_embedding_dim   = 512
 obj_cat_size            = 91
 
@@ -72,7 +72,8 @@ if use_cuda:
     print(oracle_model)
 
 oracle_loss_function = nn.NLLLoss()
-oracle_optimizer = optim.Adam(oracle_model.parameters(), lr)
+# oracle_optimizer = optim.Adam(oracle_model.parameters(), lr)
+oracle_optimizer = optim.Adadelta(oracle_model.parameters())
 # oracle_optimizer = optim.SGD(oracle_model.parameters(), lr=lr,  momentum=0.5)
 
 split_list = ['train', 'val']
