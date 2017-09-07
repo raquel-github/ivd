@@ -72,9 +72,16 @@ if use_cuda:
     print(oracle_model)
 
 oracle_loss_function = nn.NLLLoss()
-# oracle_optimizer = optim.Adam(oracle_model.parameters(), lr)
-oracle_optimizer = optim.Adadelta(oracle_model.parameters())
-# oracle_optimizer = optim.SGD(oracle_model.parameters(), lr=lr,  momentum=0.5)
+oracle_optimizer = optim.Adam(oracle_model.parameters(), lr)
+# oracle_optimizer = optim.Adadelta(oracle_model.parameters())
+# oracle_optimizer = optim.SGD(oracle_model.parameters(), lr=lr)#,  momentum=0.5)
+
+# for p in oracle_model.parameters():
+#     print(type(p))
+#     print(p.size())
+#     print(type(p.data))
+    # print(p)
+
 
 split_list = ['train', 'val']
 json_files = [train_file, val_file]
@@ -104,7 +111,7 @@ for epoch in range(iterations):
             question_batch, answer_batch, crop_features, image_features, spatial_batch, obj_cat_batch = \
                 sample['question'], sample['answer'], sample['crop_features'], sample['img_features'], sample['spaital'], sample['obj_cat']
 
-            oracle_optimizer.zero_grad()
+            oracle_model.zero_grad()
 
             actual_batch_size = crop_features.size()[0]
             # print(i_batch)
@@ -117,20 +124,29 @@ for epoch in range(iterations):
             oracle_loss = oracle_loss_function(pred_answer, answer_batch)
 
             pred = pred_answer.data.max(1)[1]
+            predCOunt = list(pred.cpu())
             correct = pred.eq(answer_batch.data).cpu().sum()
 
             acc = correct*100/len(answer_batch.data)
             accuracy.append(acc)
 
+            labelCOunt = list(answer_batch.data.cpu())
+
             if split == 'train':
                 oracle_loss.backward()
                 oracle_optimizer.step()
+                # for p in oracle_model.parameters():
+                #     # print('Update')
+                #     # print(type(p))
+                #     # print(p.size())
+                #     p.data.add_(-lr, p.grad.data)
+
                 oracle_epoch_loss = torch.cat([oracle_epoch_loss, oracle_loss.data])
             else:
                 oracle_val_loss = torch.cat([oracle_val_loss, oracle_loss.data])
 
             if i_batch % 100 == 0:
-                print('Train Epoch: {} [{}/{} ({:.0f}%)] Accuracy: {:.03f}% '.format(epoch, i_batch * batch_size, len(oracle_data) , 100. * i_batch * batch_size/ len(oracle_data), accuracy[-1]))
+                print('Train Epoch: {} [{}/{} ({:.0f}%)] Accuracy: {:.03f}%  Loss: {:0.03f} Prediction::No: {}, Yes: {}, N/A: {}| Labels::No: {}, Yes: {}, N/A: {}'.format(epoch, i_batch * batch_size, len(oracle_data) , 100. * i_batch * batch_size/ len(oracle_data), np.mean(accuracy), torch.mean(oracle_epoch_loss), predCOunt.count(0), predCOunt.count(1), predCOunt.count(2), labelCOunt.count(0), labelCOunt.count(1), labelCOunt.count(2)))
 
 
         if split == 'train':
