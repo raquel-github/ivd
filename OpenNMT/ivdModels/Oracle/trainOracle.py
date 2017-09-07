@@ -16,8 +16,9 @@ import torch.autograd as autograd
 from torch.autograd import Variable
 
 from tensorboard import SummaryWriter
-exp_name = "test_2"
-writer = SummaryWriter('../../../logs/board/' + exp_name)
+# run with: tensorboard --logdir runs
+exp_name = "baseline_test"
+writer = SummaryWriter('../../../logs/runs/' + exp_name)
 train_batch_out = 0
 valid_batch_out = 0
 
@@ -220,7 +221,7 @@ for epoch in range(iterations):
                 writer.add_scalar("Training/Batch F1 N/A", f1s[2], train_batch_out)
                 train_batch_out += 1
 
-            elif split == 'validation':
+            elif split == 'val':
                 writer.add_scalar("Validation/Batch Accurarcy", acc, valid_batch_acc_out)
                 writer.add_scalar("Validation/Batch Loss", oracle_loss.data[0], valid_batch_acc_out)
                 writer.add_scalar("Validation/Mean Batch Loss", torch.mean(oracle_epoch_loss), valid_batch_acc_out)
@@ -255,7 +256,7 @@ for epoch in range(iterations):
             out.write("Epoch %03d, Time taken %.2f, Training-Loss %.5f, Validation-Loss %.5f, Training Accuracy %.5f, Validation Accuracy %.5f \n" %(epoch, time()-start, torch.mean(oracle_epoch_loss),  torch.mean(oracle_val_loss), train_accuracy, val_accuracy))
 
     print("Epoch %03d, Time taken %.2f, Training-Loss %.5f, Validation-Loss %.5f, Training Accuracy %.5f, Validation Accuracy %.5f" %(epoch, time()-start, torch.mean(oracle_epoch_loss), torch.mean(oracle_val_loss), train_accuracy, val_accuracy))
-    writer.add_scalar("Training/Epoch Loss", float(torch.mean(oracle_epoch_loss)), epoch)
+    writer.add_scalar("Training/Epoch Loss", torch.mean(oracle_epoch_loss), epoch)
     writer.add_scalar("Training/Epoch Accuracy", train_accuracy, epoch)
     writer.add_scalar("Training/Epoch Precision No", np.mean([p[0] for p in oracle_epoch_precisions]), epoch)
     writer.add_scalar("Training/Epoch Precision Yes", np.mean([p[1] for p in oracle_epoch_precisions]), epoch)
@@ -267,7 +268,7 @@ for epoch in range(iterations):
     writer.add_scalar("Training/Epoch F1 Yes", np.mean([p[1] for p in oracle_epoch_f1s]), epoch)
     writer.add_scalar("Training/Epoch F1 N/A", np.mean([p[2] for p in oracle_epoch_f1s]), epoch)
 
-    writer.add_scalar("Validation/Epoch Loss", float(torch.mean(oracle_val_loss)), epoch)
+    writer.add_scalar("Validation/Epoch Loss", torch.mean(oracle_val_loss), epoch)
     writer.add_scalar("Validation/Epoch Accuracy", val_accuracy, epoch)
     writer.add_scalar("Training/Epoch Precision No", np.mean([p[0] for p in oracle_val_precisions]), epoch)
     writer.add_scalar("Training/Epoch Precision Yes", np.mean([p[1] for p in oracle_val_precisions]), epoch)
