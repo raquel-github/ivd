@@ -15,6 +15,12 @@ from torchvision import transforms
 import torch.autograd as autograd
 from torch.autograd import Variable
 
+from tensorboard import SummaryWriter
+exp_name = "test_1"
+writer = SummaryWriter('../../../logs/board/' + exp_name)
+train_batch_out = 0
+valid_batch_out = 0
+
 use_cuda = torch.cuda.is_available()
 # use_cuda = False
 
@@ -53,6 +59,14 @@ iterations                = 100
 batch_size                = 128
 obj_cat_embedding_dim   = 512
 obj_cat_size            = 91
+
+writer.add_text(u'Hyperparameter/lr', str(lr))
+writer.add_text("Hyperparameter/word_embedding_dim", str(word_embedding_dim))
+writer.add_text("Hyperparameter/hidden_lstm_dim", str(hidden_lstm_dim))
+writer.add_text("Hyperparameter/batch_size", str(batch_size))
+writer.add_text("Hyperparameter/obj_cat_embedding_dim", str(obj_cat_embedding_dim))
+writer.add_text("Hyperparameter/obj_cat_size", str(obj_cat_size))
+
 
 # save hyperparameters in a file
 if logging:
@@ -105,7 +119,8 @@ for epoch in range(iterations):
 
         oracle_data = OracleDataset(split, json_data_file, img_features_file, img2id_file, crop_features_file, crop2id_file, vocab_json_file)
 
-        dataloader = DataLoader(oracle_data, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+        dataloader = DataLoader(oracle_data, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=use_cuda)
+
 
         for i_batch, sample in enumerate(dataloader):
             question_batch, answer_batch, crop_features, image_features, spatial_batch, obj_cat_batch = \
@@ -130,6 +145,7 @@ for epoch in range(iterations):
             acc = correct*100/len(answer_batch.data)
             accuracy.append(acc)
 
+
             labelCOunt = list(answer_batch.data.cpu())
 
             if split == 'train':
@@ -146,7 +162,20 @@ for epoch in range(iterations):
                 oracle_val_loss = torch.cat([oracle_val_loss, oracle_loss.data])
 
             if i_batch % 100 == 0:
-                print('Train Epoch: {} [{}/{} ({:.0f}%)] Accuracy: {:.03f}%  Loss: {:0.03f} Prediction::No: {}, Yes: {}, N/A: {}| Labels::No: {}, Yes: {}, N/A: {}'.format(epoch, i_batch * batch_size, len(oracle_data) , 100. * i_batch * batch_size/ len(oracle_data), np.mean(accuracy), torch.mean(oracle_epoch_loss), predCOunt.count(0), predCOunt.count(1), predCOunt.count(2), labelCOunt.count(0), labelCOunt.count(1), labelCOunt.count(2)))
+                #print('Train Epoch: {} [{}/{} ({:.0f}%)] Accuracy: {:.03f}%  Loss: {:0.03f} Prediction::No: {}, Yes: {}, N/A: {}| Labels::No: {}, Yes: {}, N/A: {}'.format(epoch, i_batch * batch_size, len(oracle_data) , 100. * i_batch * batch_size/ len(oracle_data), np.mean(accuracy), torch.mean(oracle_epoch_loss), predCOunt.count(0), predCOunt.count(1), predCOunt.count(2), labelCOunt.count(0), labelCOunt.count(1), labelCOunt.count(2)))
+                pass
+            if split == 'train':
+                writer.add_scalar("Training/Batch Accuracy", acc, train_batch_out)
+                writer.add_scalar("Training/Batch Loss", oracle_loss.data[0], train_batch_out)
+                writer.add_scalar("Training/Mean Batch Loss", torch.mean(oracle_epoch_loss), train_batch_out)
+                train_batch_out += 1
+
+            elif split == 'validation':
+                writer.add_scalar("Validation/Batch Accurarcy", acc, valid_batch_acc_out)
+                writer.add_scalar("Validation/Batch Loss", oracle_loss.data[0], valid_batch_acc_out)
+                writer.add_scalar("Validation/Mean Batch Loss", torch.mean(oracle_epoch_loss), valid_batch_acc_out)
+                valid_batch_out += 1
+
 
 
         if split == 'train':
@@ -167,3 +196,7 @@ for epoch in range(iterations):
             out.write("Epoch %03d, Time taken %.2f, Training-Loss %.5f, Validation-Loss %.5f, Training Accuracy %.5f, Validation Accuracy %.5f \n" %(epoch, time()-start, torch.mean(oracle_epoch_loss),  torch.mean(oracle_val_loss), train_accuracy, val_accuracy))
 
     print("Epoch %03d, Time taken %.2f, Training-Loss %.5f, Validation-Loss %.5f, Training Accuracy %.5f, Validation Accuracy %.5f" %(epoch, time()-start, torch.mean(oracle_epoch_loss), torch.mean(oracle_val_loss), train_accuracy, val_accuracy))
+    writer.add_scalar("Training/Epoch Loss", float(torch.mean(oracle_epoch_loss)), epoch)
+    writer.add_scalar("Training/Epoch Accuracy", train_accuracy, epoch)
+    writer.add_scalar("Validation/Epoch Loss", float(torch.mean(oracle_val_loss)), epoch)
+    writer.add_scalar("Validation/Epoch Accuracy", val_accuracy, epoch)

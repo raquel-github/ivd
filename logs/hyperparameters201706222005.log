@@ -1,0 +1,12 @@
+word_embedding_dim 128 
+hidden_encoder_dim 128 
+hidden_decoder_dim 128 
+visual_features_dim 4096 
+iterations 100 
+encoder_lr 0.000100 
+decoder_lr 0.000500 
+grad_clip 5.000000 
+teacher_forcing 1 
+tf_decay_mode one-by-epoch-squared 
+train_val_ratio 0.200000 
+n_games_to_train 5 

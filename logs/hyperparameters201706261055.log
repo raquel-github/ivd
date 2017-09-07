@@ -1,0 +1,16 @@
+length 11 
+word_embedding_dim 128 
+hidden_encoder_dim 128 
+encoder_game_path Preprocessing/preprocessed_games/gameid2matrix_encoder.p 
+hidden_decoder_dim 128 
+visual_features_dim 4096 
+decoder_game_path Preprocessing/preprocessed_games/gameid2matrix_decoder.p 
+iterations 100 
+encoder_lr 0.000100 
+decoder_lr 0.000500 
+grad_clip 50.000000 
+teacher_forcing 0 
+tf_decay_mode one-by-epoch-squared 
+train_val_ratio 0.100000 
+save_models 1.000000 
+n_games_to_train 20 
