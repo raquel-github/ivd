@@ -16,7 +16,7 @@ import torch.autograd as autograd
 from torch.autograd import Variable
 
 from tensorboard import SummaryWriter
-exp_name = "test_1"
+exp_name = "test_2"
 writer = SummaryWriter('../../../logs/board/' + exp_name)
 train_batch_out = 0
 valid_batch_out = 0
@@ -96,6 +96,32 @@ oracle_optimizer = optim.Adam(oracle_model.parameters(), lr)
 #     print(type(p.data))
     # print(p)
 
+def prf(predictions, targets):
+    """ computes precision, recall and f1 score """
+    precision, recall, f1 = list(), list(), list()
+    for a in [0,1,2]:
+        true_positives  = ((predictions[predictions == a]) == (targets[predictions == a])).sum()
+        false_positives = ((predictions[predictions == a]) != (targets[predictions == a])).sum()
+        relatives = (targets == a).sum()
+
+        if true_positives + false_positives == 0:
+            precision.append(0)
+        else:
+            precision.append(true_positives / (true_positives + false_positives))
+
+        if relatives == 0:
+            recall.append(0)
+        else:
+            recall.append(true_positives / relatives)
+
+        if precision[-1] == 0 or recall[-1] == 0:
+            f1.append(0)
+        else:
+            f1.append(2 * (precision[-1] * recall[-1]) / (precision[-1] + recall[-1]))
+
+
+    return precision, recall, f1
+
 
 split_list = ['train', 'val']
 json_files = [train_file, val_file]
@@ -110,6 +136,13 @@ for epoch in range(iterations):
     else:
         oracle_epoch_loss = torch.FloatTensor()
         oracle_val_loss = torch.FloatTensor()
+
+    oracle_epoch_precisions = list()
+    oracle_epoch_recalls = list()
+    oracle_epoch_f1s = list()
+    oracle_val_precisions = list()
+    oracle_val_recalls = list()
+    oracle_val_f1s = list()
 
     train_accuracy = 0
     val_accuracy = 0
@@ -145,6 +178,7 @@ for epoch in range(iterations):
             acc = correct*100/len(answer_batch.data)
             accuracy.append(acc)
 
+            precisions, recalls, f1s = prf(pred, answer_batch.data)
 
             labelCOunt = list(answer_batch.data.cpu())
 
@@ -158,22 +192,47 @@ for epoch in range(iterations):
                 #     p.data.add_(-lr, p.grad.data)
 
                 oracle_epoch_loss = torch.cat([oracle_epoch_loss, oracle_loss.data])
+                oracle_epoch_precisions.append(precisions)
+                oracle_epoch_recalls.append(recalls)
+                oracle_epoch_f1s.append(f1s)
             else:
                 oracle_val_loss = torch.cat([oracle_val_loss, oracle_loss.data])
+                oracle_val_precisions.append(precisions)
+                oracle_val_recalls.append(recalls)
+                oracle_val_f1s.append(f1s)
 
             if i_batch % 100 == 0:
                 #print('Train Epoch: {} [{}/{} ({:.0f}%)] Accuracy: {:.03f}%  Loss: {:0.03f} Prediction::No: {}, Yes: {}, N/A: {}| Labels::No: {}, Yes: {}, N/A: {}'.format(epoch, i_batch * batch_size, len(oracle_data) , 100. * i_batch * batch_size/ len(oracle_data), np.mean(accuracy), torch.mean(oracle_epoch_loss), predCOunt.count(0), predCOunt.count(1), predCOunt.count(2), labelCOunt.count(0), labelCOunt.count(1), labelCOunt.count(2)))
                 pass
+
             if split == 'train':
                 writer.add_scalar("Training/Batch Accuracy", acc, train_batch_out)
                 writer.add_scalar("Training/Batch Loss", oracle_loss.data[0], train_batch_out)
                 writer.add_scalar("Training/Mean Batch Loss", torch.mean(oracle_epoch_loss), train_batch_out)
+                writer.add_scalar("Training/Batch Precision No", precisions[0], train_batch_out)
+                writer.add_scalar("Training/Batch Precision Yes", precisions[1], train_batch_out)
+                writer.add_scalar("Training/Batch Precision N/A", precisions[2], train_batch_out)
+                writer.add_scalar("Training/Batch Recall No", recalls[0], train_batch_out)
+                writer.add_scalar("Training/Batch Recall Yes", recalls[1], train_batch_out)
+                writer.add_scalar("Training/Batch Recall N/A", recalls[2], train_batch_out)
+                writer.add_scalar("Training/Batch F1 No", f1s[0], train_batch_out)
+                writer.add_scalar("Training/Batch F1 Yes", f1s[1], train_batch_out)
+                writer.add_scalar("Training/Batch F1 N/A", f1s[2], train_batch_out)
                 train_batch_out += 1
 
             elif split == 'validation':
                 writer.add_scalar("Validation/Batch Accurarcy", acc, valid_batch_acc_out)
                 writer.add_scalar("Validation/Batch Loss", oracle_loss.data[0], valid_batch_acc_out)
                 writer.add_scalar("Validation/Mean Batch Loss", torch.mean(oracle_epoch_loss), valid_batch_acc_out)
+                writer.add_scalar("Validation/Batch Precision No", precisions[0], train_batch_out)
+                writer.add_scalar("Validation/Batch Precision Yes", precisions[1], train_batch_out)
+                writer.add_scalar("Validation/Batch Precision N/A", precisions[2], train_batch_out)
+                writer.add_scalar("Validation/Batch Recall No", recalls[0], train_batch_out)
+                writer.add_scalar("Validation/Batch Recall Yes", recalls[1], train_batch_out)
+                writer.add_scalar("Validation/Batch Recall N/A", recalls[2], train_batch_out)
+                writer.add_scalar("Validation/Batch F1 No", f1s[0], train_batch_out)
+                writer.add_scalar("Validation/Batch F1 Yes", f1s[1], train_batch_out)
+                writer.add_scalar("Validation/Batch F1 N/A", f1s[2], train_batch_out)
                 valid_batch_out += 1
 
 
@@ -198,5 +257,24 @@ for epoch in range(iterations):
     print("Epoch %03d, Time taken %.2f, Training-Loss %.5f, Validation-Loss %.5f, Training Accuracy %.5f, Validation Accuracy %.5f" %(epoch, time()-start, torch.mean(oracle_epoch_loss), torch.mean(oracle_val_loss), train_accuracy, val_accuracy))
     writer.add_scalar("Training/Epoch Loss", float(torch.mean(oracle_epoch_loss)), epoch)
     writer.add_scalar("Training/Epoch Accuracy", train_accuracy, epoch)
+    writer.add_scalar("Training/Epoch Precision No", np.mean([p[0] for p in oracle_epoch_precisions]), epoch)
+    writer.add_scalar("Training/Epoch Precision Yes", np.mean([p[1] for p in oracle_epoch_precisions]), epoch)
+    writer.add_scalar("Training/Epoch Precision N/A", np.mean([p[2] for p in oracle_epoch_precisions]), epoch)
+    writer.add_scalar("Training/Epoch Recall No", np.mean([p[0] for p in oracle_epoch_recalls]), epoch)
+    writer.add_scalar("Training/Epoch Recall Yes", np.mean([p[1] for p in oracle_epoch_recalls]), epoch)
+    writer.add_scalar("Training/Epoch Recall N/A", np.mean([p[2] for p in oracle_epoch_recalls]), epoch)
+    writer.add_scalar("Training/Epoch F1 No", np.mean([p[0] for p in oracle_epoch_f1s]), epoch)
+    writer.add_scalar("Training/Epoch F1 Yes", np.mean([p[1] for p in oracle_epoch_f1s]), epoch)
+    writer.add_scalar("Training/Epoch F1 N/A", np.mean([p[2] for p in oracle_epoch_f1s]), epoch)
+
     writer.add_scalar("Validation/Epoch Loss", float(torch.mean(oracle_val_loss)), epoch)
     writer.add_scalar("Validation/Epoch Accuracy", val_accuracy, epoch)
+    writer.add_scalar("Training/Epoch Precision No", np.mean([p[0] for p in oracle_val_precisions]), epoch)
+    writer.add_scalar("Training/Epoch Precision Yes", np.mean([p[1] for p in oracle_val_precisions]), epoch)
+    writer.add_scalar("Training/Epoch Precision N/A", np.mean([p[2] for p in oracle_val_precisions]), epoch)
+    writer.add_scalar("Training/Epoch Recall No", np.mean([p[0] for p in oracle_val_recalls]), epoch)
+    writer.add_scalar("Training/Epoch Recall Yes", np.mean([p[1] for p in oracle_val_recalls]), epoch)
+    writer.add_scalar("Training/Epoch Recall N/A", np.mean([p[2] for p in oracle_val_recalls]), epoch)
+    writer.add_scalar("Training/Epoch F1 No", np.mean([p[0] for p in oracle_val_f1s]), epoch)
+    writer.add_scalar("Training/Epoch F1 Yes", np.mean([p[1] for p in oracle_val_f1s]), epoch)
+    writer.add_scalar("Training/Epoch F1 N/A", np.mean([p[2] for p in oracle_val_f1s]), epoch)
