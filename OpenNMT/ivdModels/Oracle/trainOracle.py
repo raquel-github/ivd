@@ -222,18 +222,18 @@ for epoch in range(iterations):
                 train_batch_out += 1
 
             elif split == 'val':
-                writer.add_scalar("Validation/Batch Accurarcy", acc, valid_batch_acc_out)
-                writer.add_scalar("Validation/Batch Loss", oracle_loss.data[0], valid_batch_acc_out)
-                writer.add_scalar("Validation/Mean Batch Loss", torch.mean(oracle_epoch_loss), valid_batch_acc_out)
-                writer.add_scalar("Validation/Batch Precision No", precisions[0], train_batch_out)
-                writer.add_scalar("Validation/Batch Precision Yes", precisions[1], train_batch_out)
-                writer.add_scalar("Validation/Batch Precision N/A", precisions[2], train_batch_out)
-                writer.add_scalar("Validation/Batch Recall No", recalls[0], train_batch_out)
-                writer.add_scalar("Validation/Batch Recall Yes", recalls[1], train_batch_out)
-                writer.add_scalar("Validation/Batch Recall N/A", recalls[2], train_batch_out)
-                writer.add_scalar("Validation/Batch F1 No", f1s[0], train_batch_out)
-                writer.add_scalar("Validation/Batch F1 Yes", f1s[1], train_batch_out)
-                writer.add_scalar("Validation/Batch F1 N/A", f1s[2], train_batch_out)
+                writer.add_scalar("Validation/Batch Accurarcy", acc, valid_batch_out)
+                writer.add_scalar("Validation/Batch Loss", oracle_loss.data[0], valid_batch_out)
+                writer.add_scalar("Validation/Mean Batch Loss", torch.mean(oracle_epoch_loss), valid_batch_out)
+                writer.add_scalar("Validation/Batch Precision No", precisions[0], valid_batch_out)
+                writer.add_scalar("Validation/Batch Precision Yes", precisions[1], valid_batch_out)
+                writer.add_scalar("Validation/Batch Precision N/A", precisions[2], valid_batch_out)
+                writer.add_scalar("Validation/Batch Recall No", recalls[0], valid_batch_out)
+                writer.add_scalar("Validation/Batch Recall Yes", recalls[1], valid_batch_out)
+                writer.add_scalar("Validation/Batch Recall N/A", recalls[2], valid_batch_out)
+                writer.add_scalar("Validation/Batch F1 No", f1s[0], valid_batch_out)
+                writer.add_scalar("Validation/Batch F1 Yes", f1s[1], valid_batch_out)
+                writer.add_scalar("Validation/Batch F1 N/A", f1s[2], valid_batch_out)
                 valid_batch_out += 1
 
 
