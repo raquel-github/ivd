@@ -17,7 +17,7 @@ from torch.autograd import Variable
 
 from tensorboard import SummaryWriter
 # run with: tensorboard --logdir runs
-exp_name = "baseline_test"
+exp_name = "baseline_test_2"
 writer = SummaryWriter('../../../logs/runs/' + exp_name)
 train_batch_out = 0
 valid_batch_out = 0
@@ -270,12 +270,12 @@ for epoch in range(iterations):
 
     writer.add_scalar("Validation/Epoch Loss", torch.mean(oracle_val_loss), epoch)
     writer.add_scalar("Validation/Epoch Accuracy", val_accuracy, epoch)
-    writer.add_scalar("Training/Epoch Precision No", np.mean([p[0] for p in oracle_val_precisions]), epoch)
-    writer.add_scalar("Training/Epoch Precision Yes", np.mean([p[1] for p in oracle_val_precisions]), epoch)
-    writer.add_scalar("Training/Epoch Precision N/A", np.mean([p[2] for p in oracle_val_precisions]), epoch)
-    writer.add_scalar("Training/Epoch Recall No", np.mean([p[0] for p in oracle_val_recalls]), epoch)
-    writer.add_scalar("Training/Epoch Recall Yes", np.mean([p[1] for p in oracle_val_recalls]), epoch)
-    writer.add_scalar("Training/Epoch Recall N/A", np.mean([p[2] for p in oracle_val_recalls]), epoch)
-    writer.add_scalar("Training/Epoch F1 No", np.mean([p[0] for p in oracle_val_f1s]), epoch)
-    writer.add_scalar("Training/Epoch F1 Yes", np.mean([p[1] for p in oracle_val_f1s]), epoch)
-    writer.add_scalar("Training/Epoch F1 N/A", np.mean([p[2] for p in oracle_val_f1s]), epoch)
+    writer.add_scalar("Validation/Epoch Precision No", np.mean([p[0] for p in oracle_val_precisions]), epoch)
+    writer.add_scalar("Validation/Epoch Precision Yes", np.mean([p[1] for p in oracle_val_precisions]), epoch)
+    writer.add_scalar("Validation/Epoch Precision N/A", np.mean([p[2] for p in oracle_val_precisions]), epoch)
+    writer.add_scalar("Validation/Epoch Recall No", np.mean([p[0] for p in oracle_val_recalls]), epoch)
+    writer.add_scalar("Validation/Epoch Recall Yes", np.mean([p[1] for p in oracle_val_recalls]), epoch)
+    writer.add_scalar("Validation/Epoch Recall N/A", np.mean([p[2] for p in oracle_val_recalls]), epoch)
+    writer.add_scalar("Validation/Epoch F1 No", np.mean([p[0] for p in oracle_val_f1s]), epoch)
+    writer.add_scalar("Validation/Epoch F1 Yes", np.mean([p[1] for p in oracle_val_f1s]), epoch)
+    writer.add_scalar("Validation/Epoch F1 N/A", np.mean([p[2] for p in oracle_val_f1s]), epoch)
