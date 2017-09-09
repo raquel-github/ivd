@@ -39,9 +39,9 @@ class Oracle(nn.Module):
         # self.hidden_lstm = self.init_hidden(64)
 
         # self.mlp1 = nn.Linear((4096*2)+self.word_embedding_dim+self.obj_cat_embedding_dim+8, 256)
-        self.mlp1 = nn.Linear(self.word_embedding_dim+self.obj_cat_embedding_dim+8, 256)
-        self.mlp2 = nn.Linear(256,256)
-        self.mlp3 = nn.Linear(256,3)
+        self.mlp1 = nn.Linear(self.word_embedding_dim+self.obj_cat_embedding_dim+8, 1024)
+        self.mlp2 = nn.Linear(1024,128)
+        self.mlp3 = nn.Linear(128,3)
         # self.mlp4 = nn.Linear(500,3)
 
     def init_hidden(self, actual_batch_size, split = 'train'):

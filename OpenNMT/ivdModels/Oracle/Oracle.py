@@ -30,9 +30,9 @@ class Oracle(nn.Module):
         # self.hidden_lstm = self.init_hidden(64)
 
         # self.mlp1 = nn.Linear((4096*2)+self.hidden_lstm_dim+self.obj_cat_embedding_dim+8, 256)
-        self.mlp1 = nn.Linear(self.hidden_lstm_dim+self.obj_cat_embedding_dim+8, 256)
-        self.mlp2 = nn.Linear(256,256)
-        self.mlp3 = nn.Linear(256,3)
+        self.mlp1 = nn.Linear((2048*2)+self.hidden_lstm_dim+self.obj_cat_embedding_dim+8, 1024)
+        self.mlp2 = nn.Linear(1024,128)
+        self.mlp3 = nn.Linear(128,3)
         # self.mlp4 = nn.Linear(500,3)
 
         self.init_weights()
@@ -71,8 +71,8 @@ class Oracle(nn.Module):
             question_batch = Variable(question_batch).cuda()
             obj_cat_batch = Variable(obj_cat_batch).cuda()
             spatial_batch = Variable(spatial_batch, requires_grad=False).cuda()
-            # crop_features = Variable(crop_features, requires_grad=False).cuda()
-            # image_features = Variable(image_features, requires_grad=False).cuda()
+            crop_features = Variable(crop_features, requires_grad=False).cuda()
+            image_features = Variable(image_features, requires_grad=False).cuda()
         else:
             question_batch = Variable(question_batch)
             obj_cat_batch = Variable(obj_cat_batch)
@@ -89,8 +89,8 @@ class Oracle(nn.Module):
         # print(question_batch_embedding.size())
         _, self.hidden_lstm = self.lstm(question_batch_embedding.view(46, actual_batch_size, self.word_embedding_dim), self.hidden_lstm) # 46 == Max length of the question. 
 
-        # mlp_in = torch.cat([ image_features, crop_features, spatial_batch, obj_cat_batch_embeddding, self.hidden_lstm[0].squeeze()], 1)
-        mlp_in = torch.cat([ spatial_batch, obj_cat_batch_embeddding, self.hidden_lstm[0].squeeze()], 1)
+        mlp_in = torch.cat([ image_features, crop_features, spatial_batch, obj_cat_batch_embeddding, self.hidden_lstm[0].squeeze()], 1)
+        # mlp_in = torch.cat([ spatial_batch, obj_cat_batch_embeddding, self.hidden_lstm[0].squeeze()], 1)
         
 
         mlp_out = F.relu(self.mlp1(mlp_in))

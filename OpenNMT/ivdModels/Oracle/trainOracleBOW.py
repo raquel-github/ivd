@@ -22,6 +22,8 @@ torch.manual_seed(1)
 if use_cuda:
     torch.cuda.manual_seed_all(1)
 
+selected_img_features = 'ResNet'
+
 train_file = '../../../../ivd_data/Oracle/oracle.train.json'
 val_file = '../../../../ivd_data/Oracle/oracle.val.json'
 test_file = '../../../../ivd_data/Oracle/oracle.test.json'
@@ -43,7 +45,7 @@ output_file             = "logs/output" + ts + ".log"
 loss_file               = "logs/loss" + ts + ".log"
 hyperparameters_file    = "logs/hyperparameters" + ts + ".log"
 
-logging                 = False #if my_sys else True
+logging                 = True #if my_sys else True
 save_models             = False #if my_sys else True
 model_save_path            = "models/oracle_"+ts+'_'
 

@@ -29,22 +29,31 @@ torch.manual_seed(1)
 if use_cuda:
     torch.cuda.manual_seed_all(1)
 
+selected_img_features = 'ResNet'
+
 train_file = '../../../../ivd_data/Oracle/oracle.train.json'
 val_file = '../../../../ivd_data/Oracle/oracle.val.json'
 test_file = '../../../../ivd_data/Oracle/oracle.test.json'
-
-img_features_file = '../../../../ivd_data/img_features/image_features.h5'
-img2id_file     = '../../../../ivd_data/img_features/img_features2id.json'
-crop_features_file =  '../../../../ivd_data/img_features/crop_features.h5'
-crop2id_file    = '../../../../ivd_data/img_features/crop_features2id.json'
 vocab_json_file = '../../../../ivd_data/Oracle/vocabOracle.json'
+
+if selected_img_features == 'VGG':
+    img_features_file = '../../../../ivd_data/img_features/image_features.h5'
+    img2id_file     = '../../../../ivd_data/img_features/img_features2id.json'
+    crop_features_file =  '../../../../ivd_data/img_features/crop_features.h5'
+    crop2id_file    = '../../../../ivd_data/img_features/crop_features2id.json'
+elif selected_img_features == 'ResNet':
+    img_features_file = '../../../../ivd_data/img_features/ResNet/ResNetimage_features.h5'
+    img2id_file     = '../../../../ivd_data/img_features/ResNet/ResNetimg_features2id.json'
+    crop_features_file =  '../../../../ivd_data/img_features/ResNet/ResNetcrop_features.h5'
+    crop2id_file    = '../../../../ivd_data/img_features/ResNet/ResNetcrop_features2id.json'
+
 
 ts                      = str(datetime.datetime.fromtimestamp(time()).strftime('%Y_%m_%d_%H_%M'))
 output_file             = "logs/output" + ts + ".log"
 loss_file               = "logs/loss" + ts + ".log"
 hyperparameters_file    = "logs/hyperparameters" + ts + ".log"
 
-logging                 = False #if my_sys else True
+logging                 = True #if my_sys else True
 save_models             = False #if my_sys else True
 model_save_path            = "models/oracle_"+ts+'_'
 
