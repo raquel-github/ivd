@@ -1,0 +1,95 @@
+aashish@aashish-Erazer-P6679:~/Documents/ProjectAI/ivd/OpenNMT/ivdModels/Oracle$ python3 trainOracleBOW.py 
+Oracle (
+  (word_embeddings): Embedding(3700, 300)
+  (obj_cat_embedding): Embedding(91, 512)
+  (mlp1): Linear (820 -> 256)
+  (mlp2): Linear (256 -> 256)
+  (mlp3): Linear (256 -> 3)
+)
+Epoch 000, Time taken 149.06, Training-Loss 0.76979, Validation-Loss 0.77350, Training Accuracy 56.54054, Validation Accuracy 55.75740
+Epoch 001, Time taken 301.66, Training-Loss 0.76371, Validation-Loss 0.77220, Training Accuracy 57.32673, Validation Accuracy 55.13971
+Epoch 002, Time taken 389.79, Training-Loss 0.76167, Validation-Loss 0.76315, Training Accuracy 57.60757, Validation Accuracy 57.63480
+Epoch 003, Time taken 286.16, Training-Loss 0.75976, Validation-Loss 0.76124, Training Accuracy 57.97880, Validation Accuracy 56.51275
+Epoch 004, Time taken 216.89, Training-Loss 0.75589, Validation-Loss 0.75531, Training Accuracy 58.30145, Validation Accuracy 58.84988
+Epoch 005, Time taken 200.99, Training-Loss 0.73666, Validation-Loss 0.71574, Training Accuracy 59.38199, Validation Accuracy 58.51514
+Epoch 006, Time taken 197.89, Training-Loss 0.71288, Validation-Loss 0.71798, Training Accuracy 60.82665, Validation Accuracy 60.56037
+Epoch 007, Time taken 201.35, Training-Loss 0.70733, Validation-Loss 0.70621, Training Accuracy 61.03995, Validation Accuracy 60.46970
+Epoch 008, Time taken 193.88, Training-Loss 0.70415, Validation-Loss 0.70959, Training Accuracy 61.07473, Validation Accuracy 60.41578
+Epoch 009, Time taken 195.46, Training-Loss 0.70180, Validation-Loss 0.69991, Training Accuracy 61.27836, Validation Accuracy 61.19690
+Epoch 010, Time taken 194.30, Training-Loss 0.69942, Validation-Loss 0.70465, Training Accuracy 61.30779, Validation Accuracy 61.09061
+Epoch 011, Time taken 194.00, Training-Loss 0.69639, Validation-Loss 0.69651, Training Accuracy 61.54500, Validation Accuracy 61.15038
+Epoch 012, Time taken 195.65, Training-Loss 0.69323, Validation-Loss 0.68799, Training Accuracy 61.65467, Validation Accuracy 61.99899
+Epoch 013, Time taken 193.16, Training-Loss 0.69092, Validation-Loss 0.71668, Training Accuracy 61.73524, Validation Accuracy 61.63502
+Epoch 014, Time taken 192.52, Training-Loss 0.69009, Validation-Loss 0.71346, Training Accuracy 61.87983, Validation Accuracy 57.86573
+Epoch 015, Time taken 195.72, Training-Loss 0.68762, Validation-Loss 0.68366, Training Accuracy 61.91932, Validation Accuracy 61.57928
+Epoch 016, Time taken 192.58, Training-Loss 0.68717, Validation-Loss 0.67909, Training Accuracy 62.04426, Validation Accuracy 62.46782
+Epoch 017, Time taken 202.06, Training-Loss 0.69063, Validation-Loss 0.68931, Training Accuracy 62.06673, Validation Accuracy 62.25504
+Epoch 018, Time taken 206.65, Training-Loss 0.68439, Validation-Loss 0.67447, Training Accuracy 62.34923, Validation Accuracy 63.16088
+Epoch 019, Time taken 197.29, Training-Loss 0.68380, Validation-Loss 0.70244, Training Accuracy 62.42747, Validation Accuracy 59.14165
+Epoch 020, Time taken 196.72, Training-Loss 0.68156, Validation-Loss 0.67838, Training Accuracy 62.54884, Validation Accuracy 62.53681
+Epoch 021, Time taken 197.99, Training-Loss 0.68095, Validation-Loss 0.68414, Training Accuracy 62.65069, Validation Accuracy 62.09208
+Epoch 022, Time taken 193.68, Training-Loss 0.67999, Validation-Loss 0.71470, Training Accuracy 62.77756, Validation Accuracy 61.47291
+Epoch 023, Time taken 191.94, Training-Loss 0.67910, Validation-Loss 0.68823, Training Accuracy 62.86004, Validation Accuracy 61.36903
+Epoch 024, Time taken 191.58, Training-Loss 0.67844, Validation-Loss 0.69667, Training Accuracy 62.98927, Validation Accuracy 62.36564
+Epoch 025, Time taken 192.47, Training-Loss 0.68207, Validation-Loss 0.73257, Training Accuracy 63.04289, Validation Accuracy 61.16631
+Epoch 026, Time taken 191.75, Training-Loss 0.69341, Validation-Loss 0.70206, Training Accuracy 62.81809, Validation Accuracy 62.81590
+Epoch 027, Time taken 191.88, Training-Loss 0.68988, Validation-Loss 0.70830, Training Accuracy 62.90427, Validation Accuracy 62.69965
+Epoch 028, Time taken 193.05, Training-Loss 0.68876, Validation-Loss 0.70398, Training Accuracy 63.02246, Validation Accuracy 59.64788
+Epoch 029, Time taken 191.83, Training-Loss 0.68283, Validation-Loss 0.70865, Training Accuracy 63.20263, Validation Accuracy 61.91185
+Epoch 030, Time taken 194.14, Training-Loss 0.67428, Validation-Loss 0.67606, Training Accuracy 63.60213, Validation Accuracy 62.71052
+Epoch 031, Time taken 195.39, Training-Loss 0.67374, Validation-Loss 0.67264, Training Accuracy 63.75148, Validation Accuracy 63.08375
+Epoch 032, Time taken 195.58, Training-Loss 0.67334, Validation-Loss 0.67830, Training Accuracy 63.68204, Validation Accuracy 63.45948
+Epoch 033, Time taken 193.07, Training-Loss 0.67174, Validation-Loss 0.67936, Training Accuracy 63.89289, Validation Accuracy 64.05696
+Epoch 034, Time taken 193.80, Training-Loss 0.67161, Validation-Loss 0.68491, Training Accuracy 64.04499, Validation Accuracy 64.00691
+Epoch 035, Time taken 192.73, Training-Loss 0.66958, Validation-Loss 0.67348, Training Accuracy 64.22292, Validation Accuracy 63.67301
+Epoch 036, Time taken 192.82, Training-Loss 0.66878, Validation-Loss 0.66635, Training Accuracy 64.28141, Validation Accuracy 64.21226
+Epoch 037, Time taken 193.69, Training-Loss 0.66815, Validation-Loss 0.66811, Training Accuracy 64.27046, Validation Accuracy 62.94477
+Epoch 038, Time taken 192.67, Training-Loss 0.66816, Validation-Loss 0.67353, Training Accuracy 64.34077, Validation Accuracy 63.91299
+Epoch 039, Time taken 192.38, Training-Loss 0.66709, Validation-Loss 0.67062, Training Accuracy 64.49644, Validation Accuracy 63.05793
+Epoch 040, Time taken 193.18, Training-Loss 0.66719, Validation-Loss 0.69045, Training Accuracy 64.37724, Validation Accuracy 62.80605
+Epoch 041, Time taken 193.75, Training-Loss 0.66832, Validation-Loss 0.67054, Training Accuracy 64.44545, Validation Accuracy 61.68665
+Epoch 042, Time taken 192.92, Training-Loss 0.66741, Validation-Loss 0.69673, Training Accuracy 64.55260, Validation Accuracy 62.20854
+Epoch 043, Time taken 192.40, Training-Loss 0.66586, Validation-Loss 0.69136, Training Accuracy 64.61310, Validation Accuracy 64.31785
+Epoch 044, Time taken 193.56, Training-Loss 0.66412, Validation-Loss 0.71353, Training Accuracy 64.73373, Validation Accuracy 62.93909
+Epoch 045, Time taken 193.49, Training-Loss 0.66357, Validation-Loss 0.70283, Training Accuracy 64.74381, Validation Accuracy 64.19155
+Epoch 046, Time taken 193.59, Training-Loss 0.66355, Validation-Loss 0.67140, Training Accuracy 64.74708, Validation Accuracy 64.99451
+Epoch 047, Time taken 193.11, Training-Loss 0.66253, Validation-Loss 0.67520, Training Accuracy 64.79833, Validation Accuracy 62.80191
+Epoch 048, Time taken 192.53, Training-Loss 0.66355, Validation-Loss 0.65185, Training Accuracy 64.74297, Validation Accuracy 65.19391
+Epoch 049, Time taken 193.91, Training-Loss 0.66304, Validation-Loss 0.66026, Training Accuracy 64.77830, Validation Accuracy 64.00381
+Epoch 050, Time taken 193.31, Training-Loss 0.66332, Validation-Loss 0.67527, Training Accuracy 64.75895, Validation Accuracy 61.91430
+Epoch 051, Time taken 193.13, Training-Loss 0.66399, Validation-Loss 0.66903, Training Accuracy 64.72324, Validation Accuracy 64.07105
+Epoch 052, Time taken 193.35, Training-Loss 0.66363, Validation-Loss 0.67499, Training Accuracy 64.83275, Validation Accuracy 64.46419
+Epoch 053, Time taken 193.93, Training-Loss 0.66371, Validation-Loss 0.71996, Training Accuracy 64.81230, Validation Accuracy 63.68786
+Epoch 054, Time taken 192.78, Training-Loss 0.66412, Validation-Loss 0.68275, Training Accuracy 64.81977, Validation Accuracy 64.26796
+Epoch 055, Time taken 193.62, Training-Loss 0.66475, Validation-Loss 0.68811, Training Accuracy 64.82192, Validation Accuracy 63.43856
+Epoch 056, Time taken 193.55, Training-Loss 0.66608, Validation-Loss 0.66462, Training Accuracy 64.72469, Validation Accuracy 64.82328
+Epoch 057, Time taken 204.54, Training-Loss 0.67264, Validation-Loss 0.69737, Training Accuracy 64.11438, Validation Accuracy 62.16786
+Epoch 058, Time taken 200.80, Training-Loss 0.70148, Validation-Loss 0.71595, Training Accuracy 62.43910, Validation Accuracy 61.18215
+Epoch 059, Time taken 200.02, Training-Loss 0.69318, Validation-Loss 0.70485, Training Accuracy 63.37771, Validation Accuracy 64.48733
+Epoch 060, Time taken 200.28, Training-Loss 0.68139, Validation-Loss 0.66651, Training Accuracy 64.07040, Validation Accuracy 65.06245
+Epoch 061, Time taken 200.31, Training-Loss 0.67146, Validation-Loss 0.72874, Training Accuracy 64.60046, Validation Accuracy 60.47727
+Epoch 062, Time taken 200.12, Training-Loss 0.68340, Validation-Loss 0.76132, Training Accuracy 64.07971, Validation Accuracy 63.04209
+Epoch 063, Time taken 199.48, Training-Loss 0.68609, Validation-Loss 0.68380, Training Accuracy 64.15291, Validation Accuracy 65.02102
+Epoch 064, Time taken 200.61, Training-Loss 0.67715, Validation-Loss 0.66293, Training Accuracy 64.38889, Validation Accuracy 65.52066
+Epoch 065, Time taken 200.10, Training-Loss 0.67143, Validation-Loss 0.65447, Training Accuracy 64.61949, Validation Accuracy 65.67948
+Epoch 066, Time taken 199.54, Training-Loss 0.66954, Validation-Loss 0.67984, Training Accuracy 64.75419, Validation Accuracy 64.27058
+Epoch 067, Time taken 200.37, Training-Loss 0.66967, Validation-Loss 0.69558, Training Accuracy 64.72220, Validation Accuracy 61.68495
+Epoch 068, Time taken 200.03, Training-Loss 0.67041, Validation-Loss 0.68032, Training Accuracy 64.72448, Validation Accuracy 64.67937
+Epoch 069, Time taken 199.91, Training-Loss 0.66937, Validation-Loss 0.69031, Training Accuracy 64.65200, Validation Accuracy 64.28553
+Epoch 070, Time taken 200.54, Training-Loss 0.66979, Validation-Loss 0.70662, Training Accuracy 64.76959, Validation Accuracy 59.73830
+Epoch 071, Time taken 199.72, Training-Loss 0.67326, Validation-Loss 0.69439, Training Accuracy 64.58555, Validation Accuracy 63.95390
+Epoch 072, Time taken 199.58, Training-Loss 0.67194, Validation-Loss 0.68089, Training Accuracy 64.70668, Validation Accuracy 63.06781
+Epoch 073, Time taken 200.40, Training-Loss 0.67011, Validation-Loss 0.68876, Training Accuracy 64.86510, Validation Accuracy 61.83368
+Epoch 074, Time taken 200.07, Training-Loss 0.66828, Validation-Loss 0.66795, Training Accuracy 64.87250, Validation Accuracy 65.14820
+Epoch 075, Time taken 199.60, Training-Loss 0.66652, Validation-Loss 0.65599, Training Accuracy 65.05582, Validation Accuracy 66.09064
+Epoch 076, Time taken 200.32, Training-Loss 0.66909, Validation-Loss 0.67765, Training Accuracy 64.84965, Validation Accuracy 63.54663
+Epoch 077, Time taken 200.04, Training-Loss 0.66511, Validation-Loss 0.67266, Training Accuracy 65.10164, Validation Accuracy 63.78108
+Epoch 078, Time taken 200.19, Training-Loss 0.66387, Validation-Loss 0.72783, Training Accuracy 65.15926, Validation Accuracy 60.28518
+Epoch 079, Time taken 200.15, Training-Loss 0.66342, Validation-Loss 0.65701, Training Accuracy 65.18061, Validation Accuracy 65.26626
+Epoch 080, Time taken 199.86, Training-Loss 0.66455, Validation-Loss 0.71101, Training Accuracy 65.09660, Validation Accuracy 63.03950
+Epoch 081, Time taken 199.27, Training-Loss 0.66409, Validation-Loss 0.65447, Training Accuracy 65.18917, Validation Accuracy 65.44750
+Epoch 082, Time taken 200.50, Training-Loss 0.66541, Validation-Loss 0.75772, Training Accuracy 65.06473, Validation Accuracy 61.51605
+Epoch 083, Time taken 199.93, Training-Loss 0.66541, Validation-Loss 0.68186, Training Accuracy 65.15577, Validation Accuracy 64.90553
+Epoch 084, Time taken 199.58, Training-Loss 0.66207, Validation-Loss 0.70751, Training Accuracy 65.47475, Validation Accuracy 62.46280
+Epoch 085, Time taken 200.57, Training-Loss 0.66358, Validation-Loss 0.72304, Training Accuracy 65.46695, Validation Accuracy 61.62336
+
