@@ -25,12 +25,18 @@ if use_cuda:
 train_file = '../../../../ivd_data/Oracle/oracle.train.json'
 val_file = '../../../../ivd_data/Oracle/oracle.val.json'
 test_file = '../../../../ivd_data/Oracle/oracle.test.json'
-
-img_features_file = '../../../../ivd_data/img_features/image_features.h5'
-img2id_file     = '../../../../ivd_data/img_features/img_features2id.json'
-crop_features_file =  '../../../../ivd_data/img_features/crop_features.h5'
-crop2id_file    = '../../../../ivd_data/img_features/crop_features2id.json'
 vocab_json_file = '../../../../ivd_data/Oracle/vocabOracle.json'
+
+if selected_img_features == 'VGG':
+    img_features_file = '../../../../ivd_data/img_features/image_features.h5'
+    img2id_file     = '../../../../ivd_data/img_features/img_features2id.json'
+    crop_features_file =  '../../../../ivd_data/img_features/crop_features.h5'
+    crop2id_file    = '../../../../ivd_data/img_features/crop_features2id.json'
+elif selected_img_features == 'ResNet':
+    img_features_file = '../../../../ivd_data/img_features/ResNet/ResNetimage_features.h5'
+    img2id_file     = '../../../../ivd_data/img_features/ResNet/ResNetimg_features2id.json'
+    crop_features_file =  '../../../../ivd_data/img_features/ResNet/ResNetcrop_features.h5'
+    crop2id_file    = '../../../../ivd_data/img_features/ResNet/ResNetcrop_features2id.json'
 
 ts                      = str(datetime.datetime.fromtimestamp(time()).strftime('%Y_%m_%d_%H_%M'))
 output_file             = "logs/output" + ts + ".log"
@@ -129,8 +135,8 @@ for epoch in range(iterations):
             else:
                 oracle_val_loss = torch.cat([oracle_val_loss, oracle_loss.data])
 
-            if i_batch % 100 == 0:
-                print('Train Epoch: {} [{}/{} ({:.0f}%)] Accuracy: {:.03f}% '.format(epoch, i_batch * batch_size, len(oracle_data) , 100. * i_batch * batch_size/ len(oracle_data), accuracy[-1]))
+            # if i_batch % 100 == 0:
+            #     print('Train Epoch: {} [{}/{} ({:.0f}%)] Accuracy: {:.03f}% '.format(epoch, i_batch * batch_size, len(oracle_data) , 100. * i_batch * batch_size/ len(oracle_data), accuracy[-1]))
 
 
         if split == 'train':
