@@ -1,0 +1,33 @@
+aashish@aashish-Erazer-P6679:~/Documents/ProjectAI/ivd/OpenNMT/ivdModels/Oracle$ python3 trainOracleBOW.py 
+Oracle (
+  (word_embeddings): Embedding(3700, 300)
+  (obj_cat_embedding): Embedding(91, 512)
+  (mlp1): Linear (4916 -> 256)
+  (mlp2): Linear (256 -> 128)
+  (mlp3): Linear (128 -> 3)
+)
+Epoch 000, Time taken 141.25, Training-Loss 0.76987, Validation-Loss 0.76159, Training Accuracy 56.43701, Validation Accuracy 57.35550
+Epoch 001, Time taken 141.62, Training-Loss 0.76290, Validation-Loss 0.75885, Training Accuracy 57.32921, Validation Accuracy 58.16410
+Epoch 002, Time taken 141.63, Training-Loss 0.76037, Validation-Loss 0.75927, Training Accuracy 57.69471, Validation Accuracy 58.14836
+Epoch 003, Time taken 140.79, Training-Loss 0.75862, Validation-Loss 0.76088, Training Accuracy 57.87428, Validation Accuracy 57.56995
+Epoch 004, Time taken 138.63, Training-Loss 0.75636, Validation-Loss 0.75245, Training Accuracy 58.19651, Validation Accuracy 57.92735
+Epoch 005, Time taken 139.79, Training-Loss 0.75394, Validation-Loss 0.77991, Training Accuracy 58.32230, Validation Accuracy 57.83005
+Epoch 006, Time taken 138.81, Training-Loss 0.74710, Validation-Loss 0.73143, Training Accuracy 58.81919, Validation Accuracy 59.30294
+Epoch 007, Time taken 139.44, Training-Loss 0.73735, Validation-Loss 0.73168, Training Accuracy 59.17869, Validation Accuracy 58.80415
+Epoch 008, Time taken 138.74, Training-Loss 0.71879, Validation-Loss 0.70404, Training Accuracy 59.58202, Validation Accuracy 60.58111
+Epoch 009, Time taken 139.80, Training-Loss 0.71110, Validation-Loss 0.70146, Training Accuracy 60.02543, Validation Accuracy 60.84705
+Epoch 010, Time taken 137.65, Training-Loss 0.70940, Validation-Loss 0.74584, Training Accuracy 60.18870, Validation Accuracy 56.94740
+Epoch 011, Time taken 136.92, Training-Loss 0.70845, Validation-Loss 0.70052, Training Accuracy 60.41099, Validation Accuracy 60.91936
+Epoch 012, Time taken 136.90, Training-Loss 0.70695, Validation-Loss 0.71653, Training Accuracy 60.57331, Validation Accuracy 60.11899
+Epoch 013, Time taken 137.72, Training-Loss 0.70645, Validation-Loss 0.70477, Training Accuracy 60.61939, Validation Accuracy 59.81477
+Epoch 014, Time taken 137.19, Training-Loss 0.70579, Validation-Loss 0.70783, Training Accuracy 60.68602, Validation Accuracy 60.93687
+Epoch 015, Time taken 136.73, Training-Loss 0.70529, Validation-Loss 0.69914, Training Accuracy 60.79866, Validation Accuracy 61.24185
+Epoch 016, Time taken 139.34, Training-Loss 0.70431, Validation-Loss 0.70328, Training Accuracy 60.87039, Validation Accuracy 61.12151
+Epoch 017, Time taken 138.67, Training-Loss 0.70403, Validation-Loss 0.70882, Training Accuracy 60.94859, Validation Accuracy 60.53955
+Epoch 018, Time taken 140.28, Training-Loss 0.70306, Validation-Loss 0.70263, Training Accuracy 60.96113, Validation Accuracy 60.38760
+Epoch 019, Time taken 144.12, Training-Loss 0.70185, Validation-Loss 0.70613, Training Accuracy 61.10410, Validation Accuracy 61.29013
+Epoch 020, Time taken 160.22, Training-Loss 0.70119, Validation-Loss 0.70128, Training Accuracy 61.18444, Validation Accuracy 61.50862
+Epoch 021, Time taken 150.74, Training-Loss 0.70017, Validation-Loss 0.72342, Training Accuracy 61.25996, Validation Accuracy 60.00515
+Epoch 022, Time taken 141.37, Training-Loss 0.69946, Validation-Loss 0.72868, Training Accuracy 61.37092, Validation Accuracy 58.60132
+Epoch 023, Time taken 164.04, Training-Loss 0.69880, Validation-Loss 0.69407, Training Accuracy 61.42539, Validation Accuracy 61.85280
+Epoch 024, Time taken 168.51, Training-Loss 0.69755, Validation-Loss 0.69080, Training Accuracy 61.52374, Validation Accuracy 61.92921
