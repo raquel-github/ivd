@@ -30,22 +30,22 @@ class Oracle(nn.Module):
         # self.hidden_lstm = self.init_hidden(64)
 
         # self.mlp1 = nn.Linear((4096*2)+self.hidden_lstm_dim+self.obj_cat_embedding_dim+8, 1024)
-        self.mlp1 = nn.Linear(self.hidden_lstm_dim+self.obj_cat_embedding_dim+8, 512)
-        # self.mlp2 = nn.Linear(1024,128)
-        self.mlp3 = nn.Linear(512,3)
+        self.mlp1 = nn.Linear(self.hidden_lstm_dim+self.obj_cat_embedding_dim+8, 1024)
+        self.mlp2 = nn.Linear(1024,128)
+        self.mlp3 = nn.Linear(128,3)
         # self.mlp4 = nn.Linear(500,3)
 
-        self.init_weights()
+        #self.init_weights()
 
     def init_weights(self):
         initrange = 0.1
         # self.lstm.data.uniform_(-initrange, initrange)
         self.word_embeddings.weight.data.uniform_(-initrange, initrange)
         self.mlp1.weight.data.uniform_(-initrange, initrange)
-        # self.mlp2.weight.data.uniform_(-initrange, initrange)
+        self.mlp2.weight.data.uniform_(-initrange, initrange)
         self.mlp3.weight.data.uniform_(-initrange, initrange)
         self.mlp1.bias.data.fill_(0)
-        # self.mlp2.bias.data.fill_(0)
+        self.mlp2.bias.data.fill_(0)
         self.mlp3.bias.data.fill_(0)
 
 
@@ -79,7 +79,7 @@ class Oracle(nn.Module):
             spatial_batch = Variable(spatial_batch, requires_grad=False)
             crop_features = Variable(crop_features, requires_grad=False)
             image_features = Variable(image_features, requires_grad=False)
-    
+
         question_batch_embedding  = self.word_embeddings(question_batch)
         # print(question_batch_embedding)
         obj_cat_batch_embeddding  = self.obj_cat_embedding(obj_cat_batch)
@@ -87,15 +87,15 @@ class Oracle(nn.Module):
         self.hidden_lstm = self.init_hidden(actual_batch_size, split)
 
         # print(question_batch_embedding.size())
-        _, self.hidden_lstm = self.lstm(question_batch_embedding.view(15, actual_batch_size, self.word_embedding_dim), self.hidden_lstm) # 46 == Max length of the question. 
+        _, self.hidden_lstm = self.lstm(question_batch_embedding.view(15, actual_batch_size, self.word_embedding_dim), self.hidden_lstm) # 46 == Max length of the question.
 
         # mlp_in = torch.cat([ image_features, crop_features, spatial_batch, obj_cat_batch_embeddding, self.hidden_lstm[0].squeeze()], 1)
         mlp_in = torch.cat([ spatial_batch, obj_cat_batch_embeddding, self.hidden_lstm[0].squeeze()], 1)
-        
+
 
         mlp_out = F.relu(self.mlp1(mlp_in))
-        # mlp_out = F.relu(self.mlp2(mlp_out))
-        mlp_out = self.mlp3(mlp_out)    
+        mlp_out = F.relu(self.mlp2(mlp_out))
+        mlp_out = self.mlp3(mlp_out)
         # mlp_out = F.relu(self.mlp4(mlp_out))
 
         return F.log_softmax(mlp_out)
