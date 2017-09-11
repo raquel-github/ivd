@@ -29,7 +29,7 @@ torch.manual_seed(1)
 if use_cuda:
     torch.cuda.manual_seed_all(1)
 
-selected_img_features = 'ResNet'
+selected_img_features = 'VGG'
 
 train_file = '../../../../ivd_data/Oracle/oracle.train.json'
 val_file = '../../../../ivd_data/Oracle/oracle.val.json'
@@ -60,7 +60,7 @@ model_save_path            = "models/oracle_"+ts+'_'
 ## Hyperparamters
 lr                        = 0.00001
 word_embedding_dim      = 300
-hidden_lstm_dim            = 128
+hidden_lstm_dim            = 512
 with open(vocab_json_file) as file:
     vs = json.load(file)['word2ind']
     vocab_size = len(vs)
