@@ -17,7 +17,7 @@ from torch.autograd import Variable
 
 from tensorboard import SummaryWriter
 # run with: tensorboard --logdir runs
-exp_name = "logging_weights_and_grad"
+exp_name = "logging_weights_and_grad_plus_embd"
 writer = SummaryWriter('../../../logs/runs/' + exp_name)
 train_batch_out = 0
 valid_batch_out = 0
@@ -236,12 +236,16 @@ for epoch in range(iterations):
                     writer.add_histogram("Parameters/LSTM_weight_hh_l0", oracle_model.lstm.weight_hh_l0.data.numpy(), train_batch_out // every_n, bins='auto')
                     writer.add_histogram("Parameters/LSTM_bias_ih_l0", oracle_model.lstm.bias_ih_l0.data.numpy(), train_batch_out // every_n, bins='auto')
                     writer.add_histogram("Parameters/LSTM_bias_hh_l0", oracle_model.lstm.bias_hh_l0.data.numpy(), train_batch_out // every_n, bins='auto')
+
                     writer.add_histogram("Parameters/MLP_1_weight", oracle_model.mlp1.weight.data.numpy(), train_batch_out // every_n, bins='auto')
                     writer.add_histogram("Parameters/MLP_1_bias", oracle_model.mlp1.bias.data.numpy(), train_batch_out // every_n, bins='auto')
                     writer.add_histogram("Parameters/MLP_2_weight", oracle_model.mlp2.weight.data.numpy(), train_batch_out // every_n, bins='auto')
                     writer.add_histogram("Parameters/MLP_2_bias", oracle_model.mlp2.bias.data.numpy(), train_batch_out // every_n, bins='auto')
                     writer.add_histogram("Parameters/MLP_3_weight", oracle_model.mlp3.weight.data.numpy(), train_batch_out // every_n, bins='auto')
                     writer.add_histogram("Parameters/MLP_3_bias", oracle_model.mlp3.bias.data.numpy(), train_batch_out // every_n, bins='auto')
+
+                    writer.add_histogram("Parameters/Word_Embed", oracle_model.word_embeddings.weight.data.numpy(), train_batch_out // every_n, bins='auto')
+                    writer.add_histogram("Parameters/Obj_Embed", oracle_model.obj_cat_embedding.weight.data.numpy(), train_batch_out // every_n, bins='auto')
 
                     writer.add_histogram("Gradient/LSTM_weight_ih_l0", oracle_model.lstm.weight_ih_l0.grad.data.numpy(), train_batch_out // every_n, bins='auto')
                     writer.add_histogram("Gradient/LSTM_weight_hh_l0", oracle_model.lstm.weight_hh_l0.grad.data.numpy(), train_batch_out // every_n, bins='auto')
@@ -254,6 +258,8 @@ for epoch in range(iterations):
                     writer.add_histogram("Gradient/MLP_3_weight", oracle_model.mlp3.weight.grad.data.numpy(), train_batch_out // every_n, bins='auto')
                     writer.add_histogram("Gradient/MLP_3_bias", oracle_model.mlp3.bias.grad.data.numpy(), train_batch_out // every_n, bins='auto')
 
+                    writer.add_histogram("Gradient/Word_Embed", oracle_model.word_embeddings.weight.grad.data.numpy(), train_batch_out // every_n, bins='auto')
+                    writer.add_histogram("Gradient/Obj_Embed", oracle_model.obj_cat_embedding.weight.grad.data.numpy(), train_batch_out // every_n, bins='auto')
 
                 train_batch_out += 1
 
