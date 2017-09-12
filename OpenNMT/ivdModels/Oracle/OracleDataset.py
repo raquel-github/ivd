@@ -55,12 +55,12 @@ class OracleDataset(Dataset):
         obj_cat = self.questions[idx]['obj_cat']
         
         raw_question = self.questions[idx]['question']
-        question = (np.ones(15,'uint8')*self.word2ind['-PAD-']).tolist()
+        question = (np.ones(10,'uint8')*self.word2ind['-PAD-']).tolist()
         question_words = self.simple_toks(raw_question)
 
         length = 0
         for wid, word in enumerate(question_words):
-            if length < 15:
+            if length < 10:
                 length += 1
                 if word in self.word2ind:
                     question[wid] = self.word2ind[word]

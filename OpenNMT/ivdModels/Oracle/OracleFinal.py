@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 
+use_cuda = torch.cuda.is_available()
+
 class Oracle(nn.Module):
 
     def __init__(self, hidden_dim, word_emb_dim, cat_emb_dim, vocab_size, cat_size):
@@ -23,9 +25,14 @@ class Oracle(nn.Module):
         )
 
     def init_hidden(self, batch_size):
-        return (Variable(torch.zeros(1, batch_size, self.hidden_dim)),
-                Variable(torch.zeros(1, batch_size, self.hidden_dim))
-               )
+        if use_cuda:
+            return (Variable(torch.zeros(1, batch_size, self.hidden_dim)).cuda(),
+                    Variable(torch.zeros(1, batch_size, self.hidden_dim)).cuda()
+                   )
+        else:
+            return (Variable(torch.zeros(1, batch_size, self.hidden_dim)),
+                    Variable(torch.zeros(1, batch_size, self.hidden_dim))
+                   )
 
     def forward(self, questions, categories, spatials):
 
@@ -34,15 +41,23 @@ class Oracle(nn.Module):
 
         hidden_state = self.init_hidden(batch_size)
 
+        if use_cuda:
+              questions = Variable(questions).cuda()
+              spatials = Variable(spatials).cuda()
+              categories = Variable(categories).cuda()
+        else:
+              questions = Variable(questions)
+              spatials = Variable(spatials)
+              categories = Variable(categories)
 
-        print(self.word_embeddings(Variable(questions)).view(sequence_length, batch_size, -1).size())
-        print(hidden_state[0].size())
+        # print(self.word_embeddings(Variable(questions)).view(sequence_length, batch_size, -1).size())
+        # print(hidden_state[0].size())
 
-        _, (hidden, _) = self.lstm(self.word_embeddings(Variable(questions)).view(sequence_length, batch_size, -1), hidden_state)
+        _, (hidden, _) = self.lstm(self.word_embeddings(questions).view(sequence_length, batch_size, -1), hidden_state)
 
-        print(hidden.size())
-        print(spatials.size())
-        print(self.cat_embeddings(Variable(categories)).size())
+        # print(hidden.size())
+        # print(spatials.size())
+        # print(self.cat_embeddings(Variable(categories)).size())
 
 
-        return self.mlp(torch.cat([hidden.squeeze(), Variable(spatials), self.cat_embeddings(Variable(categories))], 1))
+        return self.mlp(torch.cat([hidden.squeeze(), spatials, self.cat_embeddings(categories)], 1))
