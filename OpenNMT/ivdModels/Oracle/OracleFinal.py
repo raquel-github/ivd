@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 
 use_cuda = torch.cuda.is_available()
+gru = True
 
 class Oracle(nn.Module):
 
@@ -15,7 +16,7 @@ class Oracle(nn.Module):
         self.word_embeddings = nn.Embedding(vocab_size, word_emb_dim)
         self.cat_embeddings = nn.Embedding(cat_size, cat_emb_dim)
 
-        self.lstm = nn.LSTM(word_emb_dim, hidden_dim)
+        self.lstm = nn.GRU(word_emb_dim, hidden_dim) if gru else nn.LSTM(word_emb_dim, hidden_dim)
 
         self.mlp = nn.Sequential(
             nn.Linear(hidden_dim+8+cat_emb_dim, 512),
@@ -26,13 +27,19 @@ class Oracle(nn.Module):
 
     def init_hidden(self, batch_size):
         if use_cuda:
-            return (Variable(torch.zeros(1, batch_size, self.hidden_dim)).cuda(),
-                    Variable(torch.zeros(1, batch_size, self.hidden_dim)).cuda()
-                   )
+            if gru:
+                Variable(torch.zeros(1, batch_size, self.hidden_dim)).cuda()
+            else:
+                return (Variable(torch.zeros(1, batch_size, self.hidden_dim)).cuda(),
+                        Variable(torch.zeros(1, batch_size, self.hidden_dim)).cuda()
+                       )
         else:
-            return (Variable(torch.zeros(1, batch_size, self.hidden_dim)),
-                    Variable(torch.zeros(1, batch_size, self.hidden_dim))
-                   )
+            if gru:
+                Variable(torch.zeros(1, batch_size, self.hidden_dim)).cuda()
+            else:
+                return (Variable(torch.zeros(1, batch_size, self.hidden_dim)),
+                        Variable(torch.zeros(1, batch_size, self.hidden_dim))
+                       )
 
     def forward(self, questions, categories, spatials):
 
@@ -53,7 +60,10 @@ class Oracle(nn.Module):
         # print(self.word_embeddings(Variable(questions)).view(sequence_length, batch_size, -1).size())
         # print(hidden_state[0].size())
 
-        _, (hidden, _) = self.lstm(self.word_embeddings(questions).view(sequence_length, batch_size, -1), hidden_state)
+        if gru:
+            _, hidden = self.lstm(self.word_embeddings(questions).view(sequence_length, batch_size, -1), hidden_state)
+        else:
+            _, (hidden, _) = self.lstm(self.word_embeddings(questions).view(sequence_length, batch_size, -1), hidden_state)
 
         # print(hidden.size())
         # print(spatials.size())
