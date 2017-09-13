@@ -1,4 +1,4 @@
-from OracleDataset import OracleDataset
+from new_ds_creation import OracleDataset
 from OracleFinal import Oracle
 
 import numpy as np
@@ -34,7 +34,7 @@ selected_img_features = 'VGG'
 train_file = '../../../../ivd_data/Oracle/oracle.train.json'
 val_file = '../../../../ivd_data/Oracle/oracle.val.json'
 test_file = '../../../../ivd_data/Oracle/oracle.test.json'
-vocab_json_file = '../../../../ivd_data/Oracle/vocabOracle.json'
+vocab_json_file = 'data/dict.json'
 
 if selected_img_features == 'VGG':
     img_features_file = '../../../../ivd_data/img_features/image_features.h5'
@@ -62,7 +62,7 @@ lr                        = 0.001
 word_embedding_dim      = 300
 hidden_lstm_dim            = 512
 with open(vocab_json_file) as file:
-    vs = json.load(file)['word2ind']
+    vs = json.load(file)['word2i']
     vocab_size = len(vs)
     del vs
 iterations                = 100
@@ -160,18 +160,18 @@ for epoch in range(iterations):
     for split, json_data_file in zip(split_list, json_files):
         accuracy = []
 
-        oracle_data = OracleDataset(split, json_data_file, img_features_file, img2id_file, crop_features_file, crop2id_file, vocab_json_file)
+        oracle_data = OracleDataset()
 
         dataloader = DataLoader(oracle_data, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=use_cuda)
 
 
         for i_batch, sample in enumerate(dataloader):
-            question_batch, answer_batch, crop_features, image_features, spatial_batch, obj_cat_batch = \
-                sample['question'], sample['answer'], sample['crop_features'], sample['img_features'], sample['spaital'], sample['obj_cat']
+            question_batch, answer_batch, spatial_batch, obj_cat_batch = \
+                sample['question'], sample['answer'], sample['spatial'], sample['category']
 
             oracle_model.zero_grad()
 
-            actual_batch_size = crop_features.size()[0]
+            actual_batch_size = question_batch.size()[0]
             # print(i_batch)
             #pred_answer = oracle_model(split, question_batch, obj_cat_batch, spatial_batch, crop_features, image_features, actual_batch_size)
 
