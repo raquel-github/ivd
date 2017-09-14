@@ -50,6 +50,7 @@ test_game_ids_541.p
 
 test_game_ids_splitting.p
 
+OpenNMT/ivdModels/Oracle/data/*
 OpenNMT/ivdModels/bin/*
 OpenNMT/logs/*
 OpenNMT/pred.txt
