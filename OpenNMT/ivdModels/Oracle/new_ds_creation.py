@@ -10,7 +10,9 @@ import os
 import io
 from nltk.tokenize import TweetTokenizer
 
+import codecs
 
+reader = codecs.getreader("utf-8")
 
 
 def get_spatial_feat(bbox, im_width, im_height):
@@ -65,7 +67,7 @@ def create_data_files(data_dir='data/', dict_dir='data/', min_occ=3):
     path = os.path.join(data_dir, "guesswhat.train.jsonl.gz")
     with gzip.open(path) as f:
         for k , line in enumerate(f):
-            dialogue = json.loads(line)
+            dialogue = json.loads(line.decode('utf-8'))
 
             for o in dialogue['objects']:
                 categories_set.add(o['category'])
@@ -102,7 +104,7 @@ def create_data_files(data_dir='data/', dict_dir='data/', min_occ=3):
     a2i = {'Yes': 1, 'No': 0, 'N/A': 2}
     with gzip.open(path) as f:
         for k , line in enumerate(f):
-            dialogue = json.loads(line)
+            dialogue = json.loads(line.decode('utf-8'))
 
             im_width = dialogue['image']['width']
             im_height = dialogue['image']['height']
@@ -155,11 +157,11 @@ class OracleDataset(Dataset):
         return len(self.questions)
 
     def __getitem__(self, idx):
-        padded_question = torch.LongTensor(15).fill_(self.word2i['<padding>'])
+        padded_question = torch.LongTensor(10).fill_(self.word2i['<padding>'])
 
         for i,tok in enumerate(self.questions[str(idx)]):
             padded_question[i] = tok
-            if i == 14:
+            if i == 9:
                 break
 
         return {'question': padded_question,
@@ -167,8 +169,9 @@ class OracleDataset(Dataset):
                 'category': self.categories[str(idx)],
                 'spatial': torch.FloatTensor(self.spatials[str(idx)])}
 
+
+# create_data_files()
 """
-#create_data_files()
 dataset = GuessWhatDataset()
 dataloader = DataLoader(dataset=dataset, batch_size=8)
 for i_batch, sample_batched in enumerate(dataloader):

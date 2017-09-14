@@ -166,8 +166,15 @@ for epoch in range(iterations):
 
 
         for i_batch, sample in enumerate(dataloader):
-            question_batch, answer_batch, spatial_batch, obj_cat_batch = \
+            question_batch, answer_batch, spatial_batch, obj_cat_batch, lengths = \
                 sample['question'], sample['answer'], sample['spatial'], sample['category']
+
+            lengths, ind = torch.sort(lengths,0,descending= True)
+
+            question_batch = question_batch[ind]
+            answer_batch = answer_batch[ind]
+            spatial_batch = spatial_batch[ind]
+            obj_cat_batch = obj_cat_batch[ind]
 
             oracle_model.zero_grad()
 

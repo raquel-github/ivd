@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 from torchvision import transforms, utils
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 use_cuda = torch.cuda.is_available()
 # use_cuda = False
@@ -24,7 +25,7 @@ class Oracle(nn.Module):
         self.obj_cat_embedding = nn.Embedding(self.obj_cat_size, self.obj_cat_embedding_dim)
 
         # LSTM Model
-        self.lstm = nn.LSTM(self.word_embedding_dim, self.hidden_lstm_dim, num_layers=1)
+        self.lstm = nn.LSTM(self.word_embedding_dim, self.hidden_lstm_dim, num_layers=1, dropout=0.3, batch_first = True)
 
         # Initiliaze the hidden state of the LSTM
         # self.hidden_lstm = self.init_hidden(64)
@@ -66,7 +67,7 @@ class Oracle(nn.Module):
                             Variable(torch.zeros(1, actual_batch_size, self.hidden_lstm_dim), requires_grad=False ))
 
 
-    def forward(self, split, question_batch, obj_cat_batch, spatial_batch, crop_features, image_features, actual_batch_size):
+    def forward(self, split, question_batch, obj_cat_batch, spatial_batch, crop_features, image_features, actual_batch_size, lengths):
         if use_cuda:
             question_batch = Variable(question_batch).cuda()
             obj_cat_batch = Variable(obj_cat_batch).cuda()
@@ -81,16 +82,37 @@ class Oracle(nn.Module):
             image_features = Variable(image_features, requires_grad=False)
 
         question_batch_embedding  = self.word_embeddings(question_batch)
+
+        lengths.squeeze_(1)
+        
+        try:
+            packed_question = pack_padded_sequence(question_batch_embedding, list(lengths), batch_first = True)
+        except Exception as e:
+            print(question_batch_embedding.size())
+            print(list(lengths))
+            raise e
+        
+
         # print(question_batch_embedding)
         obj_cat_batch_embeddding  = self.obj_cat_embedding(obj_cat_batch)
 
         self.hidden_lstm = self.init_hidden(actual_batch_size, split)
 
         # print(question_batch_embedding.size())
-        _, self.hidden_lstm = self.lstm(question_batch_embedding.view(15, actual_batch_size, self.word_embedding_dim), self.hidden_lstm) # 46 == Max length of the question.
+        # _, self.hidden_lstm = self.lstm(question_batch_embedding.view(15, actual_batch_size, self.word_embedding_dim), self.hidden_lstm) # 46 == Max length of the question.
+        outputs, self.hidden_lstm = self.lstm(packed_question, self.hidden_lstm) # 46 == Max length of the question.
+
+        output_padded = pad_packed_sequence(outputs, batch_first = True)
+        I = torch.LongTensor(lengths).view(-1, 1, 1)
+        if use_cuda:
+            I = Variable(I.expand(question_batch_embedding.size(0), 1, self.hidden_lstm_dim)-1).cuda()
+        else:
+            I = Variable(I.expand(question_batch_embedding.size(0), 1, self.hidden_lstm_dim)-1).cuda()
+
+        out = torch.gather(output_padded[0], 1, I).squeeze(1)
 
         # mlp_in = torch.cat([ image_features, crop_features, spatial_batch, obj_cat_batch_embeddding, self.hidden_lstm[0].squeeze()], 1)
-        mlp_in = torch.cat([ spatial_batch, obj_cat_batch_embeddding, self.hidden_lstm[0].squeeze()], 1)
+        mlp_in = torch.cat([ spatial_batch, obj_cat_batch_embeddding, out], 1)
 
 
         mlp_out = F.relu(self.mlp1(mlp_in))

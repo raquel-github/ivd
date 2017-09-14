@@ -58,14 +58,14 @@ save_models             = False #if my_sys else True
 model_save_path            = "models/oracle_"+ts+'_'
 
 ## Hyperparamters
-lr                        = 0.001
+lr                        = 0.0001
 word_embedding_dim      = 300
 hidden_lstm_dim            = 512
 with open(vocab_json_file) as file:
     vs = json.load(file)['word2ind']
     vocab_size = len(vs)
     del vs
-iterations                = 100
+iterations                = 30
 batch_size                = 128
 obj_cat_embedding_dim   = 512
 obj_cat_size            = 91
@@ -166,14 +166,23 @@ for epoch in range(iterations):
 
 
         for i_batch, sample in enumerate(dataloader):
-            question_batch, answer_batch, crop_features, image_features, spatial_batch, obj_cat_batch = \
-                sample['question'], sample['answer'], sample['crop_features'], sample['img_features'], sample['spaital'], sample['obj_cat']
+            question_batch, answer_batch, crop_features, image_features, spatial_batch, obj_cat_batch, lengths = \
+                sample['question'], sample['answer'], sample['crop_features'], sample['img_features'], sample['spaital'], sample['obj_cat'], sample['length']
+
+            lengths, ind = torch.sort(lengths,0,descending= True)
+
+            ind.squeeze_(1)
+
+            question_batch = question_batch[ind]
+            answer_batch = answer_batch[ind]
+            spatial_batch = spatial_batch[ind]
+            obj_cat_batch = obj_cat_batch[ind]
 
             oracle_model.zero_grad()
 
             actual_batch_size = crop_features.size()[0]
             # print(i_batch)
-            pred_answer = oracle_model(split, question_batch, obj_cat_batch, spatial_batch, crop_features, image_features, actual_batch_size)
+            pred_answer = oracle_model(split, question_batch, obj_cat_batch, spatial_batch, crop_features, image_features, actual_batch_size, lengths)
 
             answer_batch = Variable(answer_batch)
             if use_cuda:
@@ -215,7 +224,7 @@ for epoch in range(iterations):
                 #print('Train Epoch: {} [{}/{} ({:.0f}%)] Accuracy: {:.03f}%  Loss: {:0.03f} Prediction::No: {}, Yes: {}, N/A: {}| Labels::No: {}, Yes: {}, N/A: {}'.format(epoch, i_batch * batch_size, len(oracle_data) , 100. * i_batch * batch_size/ len(oracle_data), np.mean(accuracy), torch.mean(oracle_epoch_loss), predCOunt.count(0), predCOunt.count(1), predCOunt.count(2), labelCOunt.count(0), labelCOunt.count(1), labelCOunt.count(2)))
                 pass
 
-            if split == 'train':
+            if split == 'train' and False:
                 writer.add_scalar("Training/Batch Accuracy", acc, train_batch_out)
                 writer.add_scalar("Training/Batch Loss", oracle_loss.data[0], train_batch_out)
                 writer.add_scalar("Training/Mean Batch Loss", torch.mean(oracle_epoch_loss), train_batch_out)
@@ -263,7 +272,7 @@ for epoch in range(iterations):
 
                 train_batch_out += 1
 
-            elif split == 'val':
+            elif split == 'val' and False:
                 writer.add_scalar("Validation/Batch Accurarcy", acc, valid_batch_out)
                 writer.add_scalar("Validation/Batch Loss", oracle_loss.data[0], valid_batch_out)
                 writer.add_scalar("Validation/Mean Batch Loss", torch.mean(oracle_epoch_loss), valid_batch_out)

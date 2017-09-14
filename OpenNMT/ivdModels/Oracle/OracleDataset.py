@@ -73,6 +73,6 @@ class OracleDataset(Dataset):
         answer = self.ans2id[self.questions[idx]['answer'].lower()]
         
         sample = {'question':question, 'answer': answer, 'crop_features':crop_features, 'img_features':img_features,\
-                  'spaital':spaital, 'obj_cat':obj_cat}
+                  'spaital':spaital, 'obj_cat':obj_cat, 'length': torch.LongTensor([min(10, len(question_words))])}
         
         return sample
