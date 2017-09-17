@@ -58,7 +58,7 @@ save_models             = False #if my_sys else True
 model_save_path            = "models/oracle_"+ts+'_'
 
 ## Hyperparamters
-lr                        = 0.0001
+lr                        = 0.001
 word_embedding_dim      = 300
 hidden_lstm_dim            = 512
 with open(vocab_json_file) as file:
@@ -177,6 +177,11 @@ for epoch in range(iterations):
             answer_batch = answer_batch[ind]
             spatial_batch = spatial_batch[ind]
             obj_cat_batch = obj_cat_batch[ind]
+
+            if split == 'train':
+                oracle_model.train()
+            else:
+                oracle_model.eval()
 
             oracle_model.zero_grad()
 

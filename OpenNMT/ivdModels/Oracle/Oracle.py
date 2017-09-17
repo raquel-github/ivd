@@ -25,7 +25,7 @@ class Oracle(nn.Module):
         self.obj_cat_embedding = nn.Embedding(self.obj_cat_size, self.obj_cat_embedding_dim)
 
         # LSTM Model
-        self.lstm = nn.LSTM(self.word_embedding_dim, self.hidden_lstm_dim, num_layers=1, dropout=0.3, batch_first = True)
+        self.lstm = nn.LSTM(self.word_embedding_dim, self.hidden_lstm_dim, num_layers=1, dropout=0.5, batch_first = True)
 
         # Initiliaze the hidden state of the LSTM
         # self.hidden_lstm = self.init_hidden(64)

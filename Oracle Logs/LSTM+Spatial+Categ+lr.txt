@@ -1,0 +1,19 @@
+aashish@aashish-Erazer-P6679:~/Documents/ProjectAI/ivd/OpenNMT/ivdModels/Oracle$ python3 trainOracle.py 
+Oracle (
+  (word_embeddings): Embedding(4820, 300)
+  (obj_cat_embedding): Embedding(91, 512)
+  (lstm): LSTM(300, 512, batch_first=True, dropout=0.3)
+  (mlp1): Linear (1032 -> 1024)
+  (mlp2): Linear (1024 -> 128)
+  (mlp3): Linear (128 -> 3)
+)
+Epoch 000, Time taken 411.11, Training-Loss 0.58167, Validation-Loss 0.52970, Training Accuracy 69.82139, Validation Accuracy 73.29165
+Epoch 001, Time taken 400.18, Training-Loss 0.50915, Validation-Loss 0.49478, Training Accuracy 75.46651, Validation Accuracy 76.55801
+Epoch 002, Time taken 350.63, Training-Loss 0.48111, Validation-Loss 0.48375, Training Accuracy 77.46275, Validation Accuracy 77.36003
+Epoch 003, Time taken 275.13, Training-Loss 0.46495, Validation-Loss 0.47733, Training Accuracy 78.57426, Validation Accuracy 77.80709
+Epoch 004, Time taken 252.24, Training-Loss 0.45179, Validation-Loss 0.47404, Training Accuracy 79.34593, Validation Accuracy 78.25601
+Epoch 005, Time taken 255.16, Training-Loss 0.44001, Validation-Loss 0.47771, Training Accuracy 80.05462, Validation Accuracy 78.14207
+Epoch 006, Time taken 251.88, Training-Loss 0.42806, Validation-Loss 0.48233, Training Accuracy 80.71106, Validation Accuracy 78.35084
+Epoch 007, Time taken 250.74, Training-Loss 0.41566, Validation-Loss 0.48408, Training Accuracy 81.41282, Validation Accuracy 78.16628
+Epoch 008, Time taken 251.71, Training-Loss 0.40272, Validation-Loss 0.48500, Training Accuracy 82.15112, Validation Accuracy 78.30252
+Epoch 009, Time taken 247.52, Training-Loss 0.38838, Validation-Loss 0.49956, Training Accuracy 82.86440, Validation Accuracy 78.09801
